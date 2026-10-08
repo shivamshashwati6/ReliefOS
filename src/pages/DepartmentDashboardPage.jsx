@@ -8,19 +8,20 @@ import {
   Users, 
   MapPin, 
   ShieldAlert, 
-  CheckCircle2, 
-  Clock, 
-  Truck, 
-  Droplet, 
-  Ship, 
   Activity,
-  ArrowRight
+  ArrowRight,
+  Clock,
+  Droplet,
+  Ship,
+  Truck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDisaster } from '../context/DisasterContext';
 import { useReports } from '../context/ReportContext';
-import { PRIORITY_ZONES, CRITICAL_ALERTS, KPI_DATA } from '../data/demoData';
+import { PRIORITY_ZONES } from '../data/demoData';
 import { DEPARTMENTS } from '../config/roles';
+import StatusBadge from '../components/ui/StatusBadge';
+import DepartmentAllocationCard from '../components/dashboard/DepartmentAllocationCard';
 
 export function DepartmentDashboardPage() {
   const { currentUser } = useAuth();
@@ -29,7 +30,7 @@ export function DepartmentDashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Determine active department: from route subpath (/department/health etc.) or user's department, fallback to HEALTH
+  // Determine active department: from route subpath or user's department, fallback to HEALTH
   const getInitialDept = () => {
     if (location.pathname.includes('/health')) return DEPARTMENTS.HEALTH;
     if (location.pathname.includes('/supply')) return DEPARTMENTS.FOOD_SUPPLY;
@@ -50,36 +51,26 @@ export function DepartmentDashboardPage() {
   return (
     <div className="space-y-6">
       {/* 1. Header & Department Switcher Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                Department Operations Desk
-              </span>
-              <span className="text-xs text-slate-400 font-medium">
-                {currentDisaster.name || 'Assam Flood Response'}
-              </span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               {activeDept === DEPARTMENTS.HEALTH && 'Health Response'}
               {activeDept === DEPARTMENTS.FOOD_SUPPLY && 'Food & Supply Response'}
               {activeDept === DEPARTMENTS.RESCUE && 'Rescue Response'}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              {activeDept === DEPARTMENTS.HEALTH && 'Clinical triage, field ambulance coordination, and emergency pharmaceutical requisitions.'}
-              {activeDept === DEPARTMENTS.FOOD_SUPPLY && 'Ration kit allocation, potable water logistics, and relief shelter provisioning.'}
-              {activeDept === DEPARTMENTS.RESCUE && 'Flood evacuation logistics, NDRF vessel deployment, and search-and-rescue assets.'}
+              Information relevant to your department.
             </p>
           </div>
 
           {/* Department Quick Switcher Tabs (For demo ease) */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0 self-start sm:self-center">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200 shrink-0 self-start sm:self-center">
             <button
               onClick={() => setActiveDept(DEPARTMENTS.HEALTH)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 activeDept === DEPARTMENTS.HEALTH
-                  ? 'bg-white text-rose-700 shadow-xs'
+                  ? 'bg-white text-rose-700 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -88,9 +79,9 @@ export function DepartmentDashboardPage() {
             </button>
             <button
               onClick={() => setActiveDept(DEPARTMENTS.FOOD_SUPPLY)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 activeDept === DEPARTMENTS.FOOD_SUPPLY
-                  ? 'bg-white text-amber-700 shadow-xs'
+                  ? 'bg-white text-amber-700 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -99,9 +90,9 @@ export function DepartmentDashboardPage() {
             </button>
             <button
               onClick={() => setActiveDept(DEPARTMENTS.RESCUE)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 activeDept === DEPARTMENTS.RESCUE
-                  ? 'bg-white text-indigo-700 shadow-xs'
+                  ? 'bg-white text-blue-700 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -114,15 +105,15 @@ export function DepartmentDashboardPage() {
 
       {/* 2. Content based on Department */}
       {activeDept === DEPARTMENTS.HEALTH && (
-        <HealthDepartmentView reports={reports} />
+        <HealthDepartmentView />
       )}
 
       {activeDept === DEPARTMENTS.FOOD_SUPPLY && (
-        <FoodSupplyDepartmentView reports={reports} />
+        <FoodSupplyDepartmentView />
       )}
 
       {activeDept === DEPARTMENTS.RESCUE && (
-        <RescueDepartmentView reports={reports} />
+        <RescueDepartmentView />
       )}
     </div>
   );
@@ -130,411 +121,456 @@ export function DepartmentDashboardPage() {
 
 /**
  * HEALTH DEPARTMENT VIEW
- * Show:
- * - Medical emergencies
- * - Medical teams needed
- * - Medicine needs
- * - Critical zones
+ * Title: Health Response
+ * Overview cards: Medical emergencies, Medical teams needed, Medicine needs, Critical health zones
+ * What Needs Attention?: Medical help requested in Zone A, Multiple people reported injuries, Medical team needed
+ * Priority Zones: Zone A Critical High medical need, Zone B High Medical support requested
  */
-function HealthDepartmentView({ reports }) {
-  const criticalMedicalZones = PRIORITY_ZONES.filter(
-    (z) => z.medicalRisk === 'High' || z.priorityScore > 80
-  );
+function HealthDepartmentView() {
+  const navigate = useNavigate();
+
+  const overviewCards = [
+    { label: 'Medical emergencies', value: '14 Active', sub: '3 triage cases pending', icon: HeartPulse, color: 'text-rose-600' },
+    { label: 'Medical teams needed', value: '5 Teams', sub: '2 teams on duty in Morigaon', icon: Users, color: 'text-blue-600' },
+    { label: 'Medicine level', value: 'HIGH Need', sub: 'Urgent medical kits & ORS', icon: Activity, color: 'text-purple-600' },
+    { label: 'Critical health zones', value: '2 Zones', sub: 'Zone A and Zone B', icon: AlertTriangle, color: 'text-amber-600' }
+  ];
+
+  const attentionItems = [
+    {
+      id: 'h-att-1',
+      title: 'Medical help requested in Zone A',
+      detail: 'Infant dehydration and fever cases reported near Community Shelter.',
+      severity: 'Critical',
+      time: '18m ago'
+    },
+    {
+      id: 'h-att-2',
+      title: 'Multiple people reported injuries',
+      detail: 'Cuts and trauma reported during building evacuation near Primary School.',
+      severity: 'High',
+      time: '25m ago'
+    },
+    {
+      id: 'h-att-3',
+      title: 'Medical team needed',
+      detail: 'Sector 4 relief camp has requested an additional field doctor on duty.',
+      severity: 'High',
+      time: '40m ago'
+    }
+  ];
+
+  const priorityZones = [
+    {
+      id: 'zone-a',
+      name: 'Zone A',
+      severity: 'Critical',
+      note: 'High medical need',
+      detail: '3,842 people affected • Urgent medical kits required'
+    },
+    {
+      id: 'zone-b',
+      name: 'Zone B',
+      severity: 'High',
+      note: 'Medical support requested',
+      detail: '2,100 people affected • Mobile clinic on standby'
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* 4 Summary Cards */}
+      {/* 4 Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-rose-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Medical Emergencies</span>
-            <HeartPulse className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">14 Active</div>
-          <div className="text-xs text-rose-700 font-medium">3 Critical triage cases</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-blue-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Medical Teams Needed</span>
-            <Users className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">5 Teams</div>
-          <div className="text-xs text-blue-700 font-medium">Army Field Med 3 deployed</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Medicine Needs</span>
-            <Activity className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">6,520 Units</div>
-          <div className="text-xs text-emerald-700 font-medium">ORS & Water Purification</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-amber-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Critical Zones</span>
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">{criticalMedicalZones.length} Sectors</div>
-          <div className="text-xs text-amber-700 font-medium">Zone A & Zone C High Risk</div>
-        </div>
+        {overviewCards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-600">{c.label}</span>
+                <Icon className={`w-4 h-4 ${c.color}`} />
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{c.value}</div>
+              <div className="text-xs text-slate-500">{c.sub}</div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Breakdown Grid */}
+      {/* Grid: What Needs Attention? & Priority Zones */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Medical Emergencies & Reports */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+        {/* Left: What Needs Attention? */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <HeartPulse className="w-4 h-4 text-rose-600" />
-              <span>Active Medical Incidents</span>
+            <h2 className="text-sm font-semibold text-slate-900">
+              What Needs Attention?
             </h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-              Immediate Attention
+            <span className="text-xs text-slate-500">
+              Health Issues
             </span>
           </div>
 
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl border border-rose-100 bg-rose-50/40 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-rose-900">Zone A: Infant Dehydration Cluster</span>
-                <span className="text-[11px] font-semibold text-rose-700">18m ago</span>
+            {attentionItems.map((item) => (
+              <div key={item.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-900">{item.title}</span>
+                  <StatusBadge status={item.severity} size="xs" />
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">{item.detail}</p>
+                <div className="text-[11px] text-slate-400">{item.time}</div>
               </div>
-              <p className="text-xs text-slate-600">
-                Infant dehydration cases reported at Morigaon Community Hall shelter point. Pediatric ORS and IV fluids needed urgently.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Elderly Mobility & Chronic Care</span>
-                <span className="text-[11px] font-semibold text-slate-500">25m ago</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Three elderly residents near Primary School Sector 4 require stretcher assistance and insulin re-supply.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Waterborne Illness Precaution</span>
-                <span className="text-[11px] font-semibold text-slate-500">45m ago</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Borehole contamination in Shelter B necessitates prophylactic medicine distribution to 40 families.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Right: Critical Zones & Medicine Needs */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Critical Zones */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-3">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-blue-600" />
-              <span>Critical Health Zones</span>
-            </h2>
-            <div className="space-y-2.5">
-              {criticalMedicalZones.map((z) => (
-                <div key={z.id} className="p-3 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
-                  <div>
-                    <div className="text-xs font-bold text-slate-900">{z.name} — {z.fullName}</div>
-                    <div className="text-[11px] text-slate-500">Affected Pop: {z.affectedPopulation} • Water: {z.waterLevel}</div>
+        {/* Right: Priority Zones */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Priority Zones
+              </h2>
+              <span className="text-xs text-slate-500">
+                Medical Status
+              </span>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {priorityZones.map((z) => (
+                <div key={z.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-900">{z.name}</span>
+                    <StatusBadge status={z.severity} size="xs" />
                   </div>
-                  <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-100 text-rose-800 shrink-0">
-                    High Risk
-                  </span>
+                  <div className="text-xs font-semibold text-slate-800">
+                    {z.note}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {z.detail}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Medicine Needs */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-3">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-600" />
-              <span>Pharmaceutical Requisitions</span>
-            </h2>
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
-                <span className="font-medium text-slate-700">ORS Rehydration Sachets</span>
-                <span className="font-bold text-slate-900">1,500 units</span>
-              </div>
-              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
-                <span className="font-medium text-slate-700">Water Purification Tablets</span>
-                <span className="font-bold text-slate-900">5,000 units</span>
-              </div>
-              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
-                <span className="font-medium text-slate-700">Trauma & First Aid Kits</span>
-                <span className="font-bold text-slate-900">120 kits</span>
-              </div>
-              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
-                <span className="font-medium text-slate-700">Polyvalent Antivenom Vials</span>
-                <span className="font-bold text-slate-900">25 vials</span>
-              </div>
-            </div>
+          <div className="pt-3 border-t border-slate-100">
+            <button
+              onClick={() => navigate('/zones')}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium text-blue-600 bg-blue-50/60 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <span>View all zones</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Recommended Medical Team Allocations (Step 8 Read-Only) */}
+      <DepartmentAllocationCard department={DEPARTMENTS.HEALTH} />
     </div>
   );
 }
 
 /**
  * FOOD & SUPPLY DEPARTMENT VIEW
- * Show:
- * - Food needed
- * - Water needed
- * - Supply shortages
- * - Affected zones
+ * Title: Food & Supply Response
+ * Overview: Food needed, Water needed, Supply shortages, Affected zones
+ * What Needs Attention?: Water shortage in Zone A, Food shortage in Zone B, Supply access blocked
+ * Priority Zones: Zone A Critical High food & water shortage, Zone B High Food support requested
  */
-function FoodSupplyDepartmentView({ reports }) {
-  const affectedSupplyZones = PRIORITY_ZONES;
+function FoodSupplyDepartmentView() {
+  const navigate = useNavigate();
+
+  const overviewCards = [
+    { label: 'Food needed', value: '4,200 Kits', sub: 'Dry rations & ready meals', icon: Package, color: 'text-amber-600' },
+    { label: 'Water needed', value: '12,000 L', sub: 'Potable water supply', icon: Droplet, color: 'text-blue-600' },
+    { label: 'Supply shortages', value: '4 Shortages', sub: 'Drinking water and kits', icon: AlertTriangle, color: 'text-rose-600' },
+    { label: 'Affected zones', value: '4 Zones', sub: '18,420 people affected', icon: MapPin, color: 'text-emerald-600' }
+  ];
+
+  const attentionItems = [
+    {
+      id: 'fs-att-1',
+      title: 'Water shortage in Zone A',
+      detail: 'Drinking water tap points contaminated. Clean bottles urgently requested.',
+      severity: 'Critical',
+      time: '20m ago'
+    },
+    {
+      id: 'fs-att-2',
+      title: 'Food shortage in Zone B',
+      detail: 'Local shelter food supply depleted; 150 meal packets needed.',
+      severity: 'High',
+      time: '35m ago'
+    },
+    {
+      id: 'fs-att-3',
+      title: 'Supply access blocked',
+      detail: 'Route A flooded; supply trucks rerouted via Route C high bypass.',
+      severity: 'High',
+      time: '50m ago'
+    }
+  ];
+
+  const priorityZones = [
+    {
+      id: 'zone-a',
+      name: 'Zone A',
+      severity: 'Critical',
+      note: 'High food and water shortage',
+      detail: '3,842 people affected • Water delivery convoy en route'
+    },
+    {
+      id: 'zone-b',
+      name: 'Zone B',
+      severity: 'High',
+      note: 'Food support requested',
+      detail: '2,100 people affected • Secondary distribution scheduled'
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* 4 Summary Cards */}
+      {/* 4 Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-amber-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Food Needed</span>
-            <Package className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">4,200 Kits</div>
-          <div className="text-xs text-amber-700 font-medium">Dry Rations & MRE packs</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-blue-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Water Needed</span>
-            <Droplet className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">12,000 L</div>
-          <div className="text-xs text-blue-700 font-medium">800 Water units pending</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-rose-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Supply Shortages</span>
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">4 Critical</div>
-          <div className="text-xs text-rose-700 font-medium">Supply transit ETA 45m</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Affected Zones</span>
-            <MapPin className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">4 Zones</div>
-          <div className="text-xs text-emerald-700 font-medium">18,420 affected persons</div>
-        </div>
+        {overviewCards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-600">{c.label}</span>
+                <Icon className={`w-4 h-4 ${c.color}`} />
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{c.value}</div>
+              <div className="text-xs text-slate-500">{c.sub}</div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Breakdown Grid */}
+      {/* Grid: What Needs Attention? & Priority Zones */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Supply Shortages */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+        {/* Left: What Needs Attention? */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <span>Supply Shortages & Distribution</span>
+            <h2 className="text-sm font-semibold text-slate-900">
+              What Needs Attention?
             </h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-              Logistics Pipeline
+            <span className="text-xs text-slate-500">
+              Supply Needs
             </span>
           </div>
 
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl border border-amber-100 bg-amber-50/40 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-900">Food Shortage Alert: Zone A & C Border</span>
-                <span className="text-[11px] font-semibold text-amber-700">32m ago</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Ready-to-eat meal stocks dropped below 18-hour operational threshold. Re-supply convoy en route via Route C bypass.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Shelter B Potable Water Failure</span>
-                <span className="text-[11px] font-semibold text-slate-500">45m ago</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Borehole silting incident cut off water supply to 40 families. Mobile Purification Unit 2 assigned to deliver 800 water units.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Shelter B Approaching Capacity</span>
-                <span className="text-[11px] font-semibold text-slate-500">1h ago</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Current occupancy 92%. Secondary food and bedding stores being diverted to secondary shelter site C-1.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Affected Zones & Supply Demands */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Truck className="w-4 h-4 text-blue-600" />
-            <span>Affected Zones Supply Demands</span>
-          </h2>
-
-          <div className="space-y-3">
-            {affectedSupplyZones.map((z) => (
-              <div key={z.id} className="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">{z.name}</span>
-                  <span className="text-[11px] font-medium text-slate-500">Pop: {z.affectedPopulation}</span>
+            {attentionItems.map((item) => (
+              <div key={item.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-900">{item.title}</span>
+                  <StatusBadge status={item.severity} size="xs" />
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-600">
-                  <span>Food Kits Needed: <strong className="text-slate-900">{z.priorityScore > 80 ? '1,200' : '650'}</strong></span>
-                  <span>Water Units: <strong className="text-slate-900">{z.priorityScore > 80 ? '400' : '200'}</strong></span>
-                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">{item.detail}</p>
+                <div className="text-[11px] text-slate-400">{item.time}</div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Right: Priority Zones */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Priority Zones
+              </h2>
+              <span className="text-xs text-slate-500">
+                Supply Demands
+              </span>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {priorityZones.map((z) => (
+                <div key={z.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-900">{z.name}</span>
+                    <StatusBadge status={z.severity} size="xs" />
+                  </div>
+                  <div className="text-xs font-semibold text-slate-800">
+                    {z.note}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {z.detail}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100">
+            <button
+              onClick={() => navigate('/zones')}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium text-blue-600 bg-blue-50/60 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <span>View all zones</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Recommended Food & Water Allocations (Step 8 Read-Only) */}
+      <DepartmentAllocationCard department={DEPARTMENTS.FOOD_SUPPLY} />
     </div>
   );
 }
 
 /**
  * RESCUE DEPARTMENT VIEW
- * Show:
- * - Rescue requests
- * - Boats needed
- * - People needing rescue
- * - Priority zones
+ * Title: Rescue Response
+ * Overview: Rescue requests, Boats needed, People needing rescue, Priority zones
+ * What Needs Attention?: People stranded in Zone A, Rescue boats needed, Road access difficult
+ * Priority Zones: Zone A Critical People stranded & boats needed, Zone B High Rescue boats requested
  */
-function RescueDepartmentView({ reports }) {
-  const rescueZones = PRIORITY_ZONES;
+function RescueDepartmentView() {
+  const navigate = useNavigate();
+
+  const overviewCards = [
+    { label: 'Rescue requests', value: '18 Requests', sub: '6 immediate response needed', icon: LifeBuoy, color: 'text-blue-600' },
+    { label: 'Boats needed', value: '8 Boats', sub: 'Motorized flood crafts', icon: Ship, color: 'text-indigo-600' },
+    { label: 'People needing rescue', value: '340 People', sub: 'In flooded sectors', icon: Users, color: 'text-rose-600' },
+    { label: 'Priority zones', value: '2 Zones', sub: 'Zone A and Zone B', icon: ShieldAlert, color: 'text-amber-600' }
+  ];
+
+  const attentionItems = [
+    {
+      id: 'res-att-1',
+      title: 'People stranded in Zone A',
+      detail: 'Families trapped on upper floors near primary school with rising water.',
+      severity: 'Critical',
+      time: '12m ago'
+    },
+    {
+      id: 'res-att-2',
+      title: 'Rescue boats needed',
+      detail: 'NDRF team requesting 4 additional motor vessels for Sector 4 evacuation.',
+      severity: 'Critical',
+      time: '28m ago'
+    },
+    {
+      id: 'res-att-3',
+      title: 'Road access difficult',
+      detail: 'Main culvert submerged by 2.4 ft water; only amphibious craft can pass.',
+      severity: 'High',
+      time: '45m ago'
+    }
+  ];
+
+  const priorityZones = [
+    {
+      id: 'zone-a',
+      name: 'Zone A',
+      severity: 'Critical',
+      note: 'People stranded & boats needed',
+      detail: '3,842 people affected • 4 rescue boats deployed'
+    },
+    {
+      id: 'zone-b',
+      name: 'Zone B',
+      severity: 'High',
+      note: 'Rescue boats requested',
+      detail: '2,100 people affected • Standby boat post established'
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* 4 Summary Cards */}
+      {/* 4 Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-indigo-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Rescue Requests</span>
-            <LifeBuoy className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">18 Pending</div>
-          <div className="text-xs text-indigo-700 font-medium">6 High-urgency calls</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-blue-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Boats Needed</span>
-            <Ship className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">8 Vessels</div>
-          <div className="text-xs text-blue-700 font-medium">NDRF & SDRF motor crafts</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-rose-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">People Needing Rescue</span>
-            <Users className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">340 Persons</div>
-          <div className="text-xs text-rose-700 font-medium">Stranded on upper floors</div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-amber-600">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Priority Zones</span>
-            <ShieldAlert className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">Zone A & B</div>
-          <div className="text-xs text-amber-700 font-medium">3 breach points active</div>
-        </div>
+        {overviewCards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-600">{c.label}</span>
+                <Icon className={`w-4 h-4 ${c.color}`} />
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{c.value}</div>
+              <div className="text-xs text-slate-500">{c.sub}</div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Breakdown Grid */}
+      {/* Grid: What Needs Attention? & Priority Zones */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Rescue Distress Calls */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+        {/* Left: What Needs Attention? */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <LifeBuoy className="w-4 h-4 text-indigo-600" />
-              <span>Pending Rescue Distress Reports</span>
+            <h2 className="text-sm font-semibold text-slate-900">
+              What Needs Attention?
             </h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-              SAR Queue
+            <span className="text-xs text-slate-500">
+              Rescue Alerts
             </span>
           </div>
 
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl border border-rose-100 bg-rose-50/40 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-rose-900">Zone A — Sector 4: Elderly Evacuation</span>
-                <span className="text-[11px] font-semibold text-rose-700">Immediate</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Water 2+ ft inside houses. Three elderly residents immobilized near Primary School. High current prevents wading.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Route A Submerged Culvert Rescue Post</span>
-                <span className="text-[11px] font-semibold text-slate-500">Active</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Strong current across KM 42 corridor. Standby safety boat station required for stranded commuters.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Bhuragaon Embankment Breach Watch</span>
-                <span className="text-[11px] font-semibold text-slate-500">Standby</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Water level 2.1m. 2 amphibious carriers stationed on north bank for immediate evacuation protocol.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Priority Zones for Rescue */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Ship className="w-4 h-4 text-blue-600" />
-            <span>Priority Zones Water Levels</span>
-          </h2>
-
-          <div className="space-y-3">
-            {rescueZones.map((z) => (
-              <div key={z.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">{z.name} ({z.fullName})</span>
-                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                    z.priorityScore > 80 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    Score {z.priorityScore}
-                  </span>
+            {attentionItems.map((item) => (
+              <div key={item.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-900">{item.title}</span>
+                  <StatusBadge status={item.severity} size="xs" />
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-600">
-                  <span>Water Depth: <strong className="text-slate-900">{z.waterLevel}</strong></span>
-                  <span>Boats Assigned: <strong className="text-slate-900">{z.priorityScore > 80 ? '4' : '2'}</strong></span>
-                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">{item.detail}</p>
+                <div className="text-[11px] text-slate-400">{item.time}</div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Right: Priority Zones */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Priority Zones
+              </h2>
+              <span className="text-xs text-slate-500">
+                Rescue Operations
+              </span>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {priorityZones.map((z) => (
+                <div key={z.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-900">{z.name}</span>
+                    <StatusBadge status={z.severity} size="xs" />
+                  </div>
+                  <div className="text-xs font-semibold text-slate-800">
+                    {z.note}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {z.detail}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100">
+            <button
+              onClick={() => navigate('/zones')}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium text-blue-600 bg-blue-50/60 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <span>View all zones</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Recommended Rescue Boat Allocations (Step 8 Read-Only) */}
+      <DepartmentAllocationCard department={DEPARTMENTS.RESCUE} />
     </div>
   );
 }

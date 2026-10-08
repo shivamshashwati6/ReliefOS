@@ -99,6 +99,12 @@ export function ZonesPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Compact Resources Needed Summary (Section 16) */}
+                <div className="pt-2.5 border-t border-slate-100 text-xs">
+                  <span className="text-slate-500 font-medium block mb-0.5">Resources needed:</span>
+                  <span className="text-slate-800 font-semibold">Food • Water • Rescue • Medical</span>
+                </div>
               </div>
 
               {/* Bottom: Priority Score and View Zone Button */}

@@ -18,6 +18,10 @@ import ReportEmergencyPage from './pages/ReportEmergencyPage';
 import ReportsPage from './pages/ReportsPage';
 import ZonesPage from './pages/ZonesPage';
 import ZoneDetailPage from './pages/ZoneDetailPage';
+import AllocationPage from './pages/AllocationPage';
+import ResponsePlansPage from './pages/ResponsePlansPage';
+import ResponsePlanDetailPage from './pages/ResponsePlanDetailPage';
+import ResponseMonitoringPage from './pages/ResponseMonitoringPage';
 
 import { useAuth } from './context/AuthContext';
 import { ROLES, ROLE_DEFAULT_ROUTES } from './config/roles';
@@ -189,18 +193,42 @@ export function App() {
           }
         />
         <Route
-          path="/plans"
+          path="/response-plans"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER]}>
-              <PlaceholderWrapper moduleId="response-plans" />
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER, ROLES.DEPARTMENT]}>
+              <ResponsePlansPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/response-plans/:planId"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER, ROLES.DEPARTMENT]}>
+              <ResponsePlanDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plans"
+          element={<Navigate to="/response-plans" replace />}
+        />
+        <Route
+          path="/response-monitoring"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER, ROLES.DEPARTMENT]}>
+              <ResponseMonitoringPage />
             </ProtectedRoute>
           }
         />
         <Route
           path="/simulation"
+          element={<Navigate to="/response-monitoring" replace />}
+        />
+        <Route
+          path="/allocation"
           element={
             <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER]}>
-              <PlaceholderWrapper moduleId="simulation-lab" />
+              <AllocationPage />
             </ProtectedRoute>
           }
         />

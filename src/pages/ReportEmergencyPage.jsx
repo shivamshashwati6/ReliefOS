@@ -6,16 +6,27 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useDisaster } from '../context/DisasterContext';
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../config/roles';
 import ReportForm from '../components/reports/ReportForm';
 import Button from '../components/ui/Button';
 
 export function ReportEmergencyPage() {
   const navigate = useNavigate();
   const { currentDisaster } = useDisaster();
+  const { role } = useAuth();
   const [submittedReport, setSubmittedReport] = useState(null);
 
   const handleReset = () => {
     setSubmittedReport(null);
+  };
+
+  const handleDone = () => {
+    if (role === ROLES.CITIZEN) {
+      navigate('/citizen/dashboard');
+    } else {
+      navigate('/reports');
+    }
   };
 
   return (
@@ -77,8 +88,8 @@ export function ReportEmergencyPage() {
                   <Button
                     variant="default"
                     size="md"
-                    onClick={() => navigate('/reports')}
-                    className="w-full sm:w-auto justify-center px-8"
+                    onClick={handleDone}
+                    className="w-full sm:w-auto justify-center px-8 cursor-pointer"
                   >
                     Done
                   </Button>

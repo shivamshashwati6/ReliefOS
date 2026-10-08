@@ -5,6 +5,9 @@ import MapPanel from '../components/dashboard/MapPanel';
 import ResourceStatus from '../components/dashboard/ResourceStatus';
 import CriticalAlerts from '../components/dashboard/CriticalAlerts';
 import AIRecommendation from '../components/dashboard/AIRecommendation';
+import RecommendedAllocationSummary from '../components/dashboard/RecommendedAllocationSummary';
+import ResponsePlanSummaryCard from '../components/dashboard/ResponsePlanSummaryCard';
+import ResponseMonitoringSummaryCard from '../components/dashboard/ResponseMonitoringSummaryCard';
 import { useDisaster } from '../context/DisasterContext';
 
 export function CommandCenterPage({ onOpenAlerts }) {
@@ -65,7 +68,16 @@ export function CommandCenterPage({ onOpenAlerts }) {
         </div>
       </section>
 
-      {/* 4. Recommended Next Step */}
+      {/* 4. Recommended Resource Allocation Summary (Step 8) */}
+      <RecommendedAllocationSummary />
+
+      {/* 5. Response Plan Overview (Step 9) */}
+      <ResponsePlanSummaryCard />
+
+      {/* 6. Response Monitoring & Simulation (Step 10) */}
+      <ResponseMonitoringSummaryCard />
+
+      {/* 7. Recommended Next Step */}
       <AIRecommendation />
     </div>
   );

@@ -23,6 +23,7 @@ import {
 import { useZones } from '../context/ZoneContext';
 import { useReports } from '../context/ReportContext';
 import { useDisaster } from '../context/DisasterContext';
+import { calculateZoneDemand } from '../engines/demandEngine';
 import StatusBadge from '../components/ui/StatusBadge';
 import Button from '../components/ui/Button';
 import ReportCard from '../components/reports/ReportCard';
@@ -35,6 +36,8 @@ export function ZoneDetailPage() {
   const { currentDisaster } = useDisaster();
 
   const [showCalculation, setShowCalculation] = useState(false);
+  const [showDemandExplanation, setShowDemandExplanation] = useState(false);
+  const [showFormulaCalculation, setShowFormulaCalculation] = useState(false);
 
   const zone = getZoneById(zoneId) || zones.find(z => z.id.toLowerCase() === zoneId?.toLowerCase()) || zones[0];
 
@@ -62,13 +65,18 @@ export function ZoneDetailPage() {
   const medFactorPct = Math.round((zone.factors?.medicalRisk ?? 0.9) * 100);
   const accessFactorPct = Math.round((zone.factors?.accessibilityDifficulty ?? 0.7) * 100);
 
-  // Requirements needed
-  const neededResources = [
-    { label: 'Food', amount: '1,200 kits', icon: Package },
-    { label: 'Water', amount: '800 units', icon: Droplets },
-    { label: 'Rescue boats', amount: '4', icon: Ship },
-    { label: 'Medical teams', amount: '1', icon: Stethoscope },
-  ];
+  // Deterministic resource demand calculation (Step 7)
+  const demand = zone.demand || calculateZoneDemand({
+    zoneId: zone.id,
+    disasterId: currentDisaster?.id || 'DISASTER-001',
+    peopleAffected: zone.affectedPopulation,
+    severity: zone.priorityBand,
+    medicalNeed: zone.factors?.medicalRisk >= 0.7 ? 'HIGH' : zone.factors?.medicalRisk >= 0.3 ? 'MEDIUM' : 'LOW',
+    strandedPeople: zone.id === 'zone-a' ? 45 : zone.id === 'zone-b' ? 25 : null,
+    accessibilityDifficulty: zone.factors?.accessibilityDifficulty ?? 0.8,
+    vulnerability: zone.factors?.vulnerability ?? 1.0,
+    reports: assignedReports,
+  });
 
   // 6 factors for calculation drawer
   const factorsList = [
@@ -175,31 +183,230 @@ export function ZoneDetailPage() {
         </p>
       </div>
 
-      {/* WHAT IS NEEDED? */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          WHAT IS NEEDED?
-        </h2>
+      {/* Resources Needed (Sections 14 & 15) */}
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">
+              Resources Needed
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Available inventory, needed quantities, and gap for {zone.name}
+            </p>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          {neededResources.map((res, idx) => {
-            const Icon = res.icon;
-            return (
-              <div
-                key={idx}
-                className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between space-y-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-600">{res.label}</span>
-                  <Icon className="w-4 h-4 text-slate-400" />
-                </div>
-                <div className="text-lg font-bold text-slate-900">
-                  {res.amount}
-                </div>
-              </div>
-            );
-          })}
+          <button
+            onClick={() => setShowDemandExplanation(!showDemandExplanation)}
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 self-start sm:self-center cursor-pointer"
+          >
+            <span>Why do we need this much?</span>
+            {showDemandExplanation ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
         </div>
+
+        {/* 5 Resource Cards: Food, Water, Rescue Boats, Medical Teams, Medicine */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {/* 1. Food */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600 border border-amber-200">
+                  <Package className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">Food</span>
+              </div>
+              <span className="text-xs font-bold text-slate-900">
+                {demand.food.needed.toLocaleString()} kits needed
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+              <span>{demand.food.available.toLocaleString()} available</span>
+              <span className="font-semibold text-amber-700">
+                {demand.food.gap.toLocaleString()} more needed
+              </span>
+            </div>
+          </div>
+
+          {/* 2. Water */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-200">
+                  <Droplets className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">Water</span>
+              </div>
+              <span className="text-xs font-bold text-slate-900">
+                {demand.water.needed.toLocaleString()} units needed
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+              <span>{demand.water.available.toLocaleString()} available</span>
+              <span className="font-semibold text-blue-700">
+                {demand.water.gap.toLocaleString()} more needed
+              </span>
+            </div>
+          </div>
+
+          {/* 3. Rescue Boats */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200">
+                  <Ship className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">Rescue Boats</span>
+              </div>
+              <span className="text-xs font-bold text-slate-900">
+                {demand.rescueBoats.needed !== null ? `${demand.rescueBoats.needed} needed` : 'Assessment Required'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+              <span>{demand.rescueBoats.available} available</span>
+              <span className="font-semibold text-emerald-700">
+                {demand.rescueBoats.gap !== null ? `${demand.rescueBoats.gap} more needed` : 'To be assessed'}
+              </span>
+            </div>
+          </div>
+
+          {/* 4. Medical Teams */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200">
+                  <Stethoscope className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">Medical Teams</span>
+              </div>
+              <span className="text-xs font-bold text-slate-900">
+                {demand.medicalTeams.needed} needed
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+              <span>{demand.medicalTeams.available} available</span>
+              <span className="font-semibold text-rose-700">
+                {demand.medicalTeams.gap} more needed
+              </span>
+            </div>
+          </div>
+
+          {/* 5. Medicine */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 sm:col-span-2 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600 border border-purple-200">
+                  <HeartPulse className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">Medicine</span>
+              </div>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                {demand.medicine.level} Need
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+              {demand.medicine.reason}
+            </p>
+          </div>
+        </div>
+
+        {/* Collapsible "Why do we need this much?" Section (Section 15) */}
+        {showDemandExplanation && (
+          <div className="pt-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
+            <div className="space-y-1">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Why do we need this much?
+              </h3>
+              <p className="text-xs text-slate-500">
+                These are system estimates based on available information and configurable simulation assumptions.
+              </p>
+            </div>
+
+            {/* Explanations List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                <span className="font-bold text-slate-800 block">Food needed</span>
+                <p className="text-slate-600">
+                  {demand.explanation?.food || 'People affected × 0.6 kits/person/day × 3 days'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                <span className="font-bold text-slate-800 block">Water needed</span>
+                <p className="text-slate-600">
+                  {demand.explanation?.water || 'People affected × 1.2 units/person/day × 3 days'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                <span className="font-bold text-slate-800 block">Rescue boats</span>
+                <p className="text-slate-600">
+                  {demand.explanation?.rescueBoats || 'People needing rescue ÷ 15 people per boat'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                <span className="font-bold text-slate-800 block">Medical teams</span>
+                <p className="text-slate-600">
+                  {demand.explanation?.medicalTeams || 'Affected population ÷ 1,000 + medical need adjustment'}
+                </p>
+              </div>
+            </div>
+
+            {/* Show Calculation Button & Drawer */}
+            <div className="pt-2">
+              <button
+                onClick={() => setShowFormulaCalculation(!showFormulaCalculation)}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+              >
+                <span>{showFormulaCalculation ? 'Hide calculation' : 'Show calculation'}</span>
+                {showFormulaCalculation ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {showFormulaCalculation && (
+                <div className="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
+                  <div className="font-bold text-slate-800">
+                    System Calculation Details
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-slate-400 block">Food Rate</span>
+                      <strong className="text-slate-900">0.6 kits/person/day</strong>
+                    </div>
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-slate-400 block">Water Rate</span>
+                      <strong className="text-slate-900">1.2 units/person/day</strong>
+                    </div>
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-slate-400 block">Response Window</span>
+                      <strong className="text-slate-900">3 days</strong>
+                    </div>
+                    <div className="p-2 rounded bg-white border border-slate-200">
+                      <span className="text-slate-400 block">Boat Capacity</span>
+                      <strong className="text-slate-900">15 persons/boat</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 pt-1">
+                    <span className="px-2 py-0.5 rounded bg-white border border-slate-200">
+                      {demand.explanation?.situationAdjustment || 'Situation adjustment: 1.0'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-white border border-slate-200">
+                      {demand.explanation?.severityModifier || 'Severity modifier: 1.0'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Planning Support Disclaimer Banner (Section 22) */}
+            <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-200 text-xs text-blue-900 flex items-start gap-2">
+              <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <span>
+                Estimates are for planning support. Final resource decisions should be reviewed by the responsible team.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* WHY IS THIS ZONE IMPORTANT? */}
@@ -270,7 +477,7 @@ export function ZoneDetailPage() {
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-900">
-                  System Calculation (Deterministic Breakdown)
+                  System Calculation (Breakdown)
                 </span>
                 <span className="text-xs font-mono text-slate-600 font-bold">
                   Total = {zone.priorityScore} / 100
@@ -308,7 +515,7 @@ export function ZoneDetailPage() {
               <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 text-emerald-950 space-y-1">
                 <span className="font-semibold block">System calculation (Engine)</span>
                 <p className="text-emerald-800 text-[11px]">
-                  Computes priority score (0–100) and priority band through transparent, deterministic weighting.
+                  Computes priority score (0–100) and priority level through transparent system weighting.
                 </p>
               </div>
             </div>
@@ -353,7 +560,7 @@ export function ZoneDetailPage() {
               No reports currently mapped
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Operating on baseline regional flood monitoring telemetry. New citizen reports submitted in {zone.name} will appear here.
+              Operating on baseline regional flood monitoring data. New citizen reports submitted in {zone.name} will appear here.
             </p>
           </div>
         )}

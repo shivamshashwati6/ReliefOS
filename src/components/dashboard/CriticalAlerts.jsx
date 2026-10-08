@@ -19,6 +19,15 @@ export function CriticalAlerts({ alerts = CRITICAL_ALERTS, onSelectAlert }) {
     'alt-04': 'Sector B'
   };
 
+  // Desired order matching Section 5E: Water shortage, Medical help needed, Road blocked, Shelter nearly full
+  const alertOrder = ['alt-03', 'alt-02', 'alt-01', 'alt-04'];
+  const displayAlerts = [...alerts].sort((a, b) => {
+    const idxA = alertOrder.indexOf(a.id);
+    const idxB = alertOrder.indexOf(b.id);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    return 0;
+  });
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs flex flex-col">
       {/* Header */}
@@ -35,7 +44,7 @@ export function CriticalAlerts({ alerts = CRITICAL_ALERTS, onSelectAlert }) {
 
       {/* Alerts list */}
       <div className="space-y-2.5 overflow-y-auto">
-        {alerts.map((alert) => {
+        {displayAlerts.map((alert) => {
           const title = friendlyTitles[alert.id] || alert.title;
           const zone = friendlyZones[alert.id] || alert.zone;
 

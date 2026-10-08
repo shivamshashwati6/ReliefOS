@@ -51,7 +51,7 @@ export function KPIBar() {
   return (
     <section aria-label="Overview Metrics" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+        <h2 className="text-sm font-semibold text-slate-700">
           Overview
         </h2>
       </div>

@@ -22,7 +22,7 @@ export const ROLE_LABELS = {
 
 export const DEPARTMENT_LABELS = {
   HEALTH: 'Health Department',
-  FOOD_SUPPLY: 'Food & Supply',
+  FOOD_SUPPLY: 'Food & Supply Department',
   RESCUE: 'Rescue Department',
 };
 
@@ -36,52 +36,52 @@ export const DEMO_USERS = [
   {
     id: 'user-citizen',
     email: 'citizen@relief.local',
-    name: 'Ramesh Borah',
+    name: 'Shashwati',
     role: ROLES.CITIZEN,
     department: null,
-    title: 'Citizen / Resident',
-    avatar: 'RB',
-    badge: 'Resident'
+    title: 'Citizen',
+    avatar: 'SH',
+    badge: 'Citizen'
   },
   {
     id: 'user-command',
     email: 'command@relief.local',
-    name: 'Commander R. Sharma',
+    name: 'Command Operator',
     role: ROLES.COMMAND_CENTER,
     department: null,
-    title: 'Duty Commander',
-    avatar: 'RS',
-    badge: 'DUTY-OPS-01'
+    title: 'Command Center',
+    avatar: 'CO',
+    badge: 'Command Center'
   },
   {
     id: 'user-health',
     email: 'health@relief.local',
-    name: 'Dr. Ananya Roy',
+    name: 'Health Team',
     role: ROLES.DEPARTMENT,
     department: DEPARTMENTS.HEALTH,
-    title: 'Chief Medical Officer',
-    avatar: 'AR',
-    badge: 'HEALTH-MED-1'
+    title: 'Health Department Lead',
+    avatar: 'HT',
+    badge: 'Health Department'
   },
   {
     id: 'user-supply',
     email: 'supply@relief.local',
-    name: 'Pradip Das',
+    name: 'Food & Supply Team',
     role: ROLES.DEPARTMENT,
     department: DEPARTMENTS.FOOD_SUPPLY,
-    title: 'Logistics & Supply Director',
-    avatar: 'PD',
-    badge: 'LOGISTICS-SUP-2'
+    title: 'Food & Supply Coordinator',
+    avatar: 'FS',
+    badge: 'Food & Supply Department'
   },
   {
     id: 'user-rescue',
     email: 'rescue@relief.local',
-    name: 'Insp. Vikram Gogoi',
+    name: 'Rescue Team',
     role: ROLES.DEPARTMENT,
     department: DEPARTMENTS.RESCUE,
-    title: 'NDRF Rescue Unit Head',
-    avatar: 'VG',
-    badge: 'NDRF-SAR-4'
+    title: 'Rescue Operations',
+    avatar: 'RT',
+    badge: 'Rescue Department'
   }
 ];
 

@@ -18,6 +18,7 @@ import { cn } from '../../lib/utils';
 export function AIRecommendation({ recommendation = AI_RECOMMENDATION }) {
   const navigate = useNavigate();
   const [feedbackState, setFeedbackState] = useState(null); // 'approved' | 'modified' | 'rejected'
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleActionClick = (actionType) => {
     setFeedbackState(actionType);
@@ -37,24 +38,79 @@ export function AIRecommendation({ recommendation = AI_RECOMMENDATION }) {
       aria-label="Recommended Next Step"
       className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs"
     >
-      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Left: Summary & Suggestions */}
-        <div className="space-y-4 flex-1">
+        <div className="space-y-3 flex-1">
           <div>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="text-xs font-semibold text-slate-500">
               Recommended Next Step
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">
               Zone A needs immediate attention.
             </h3>
-            <p className="text-sm text-slate-600 mt-1">
-              <strong>3,842 people affected</strong> in Sector 4 following water level rise.
+            <p className="text-sm text-slate-700 mt-1">
+              Suggested support: rescue boats, food, water and medical support.
             </p>
           </div>
 
-          {/* Suggested Resources Needed */}
+          {/* Human review note */}
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Info className="w-4 h-4 text-slate-400 shrink-0" />
+            <span>AI-generated suggestion. Final decisions should be reviewed by a human.</span>
+          </div>
+
+          {/* Collapsible Details Action */}
           <div>
-            <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 underline cursor-pointer"
+            >
+              {showDetails ? 'Hide details' : 'View details'}
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Primary View Zone Button and quick review actions */}
+        <div className="flex flex-col justify-center gap-3 lg:w-64 lg:border-l lg:border-slate-100 lg:pl-6 shrink-0">
+          <Button
+            variant="default"
+            size="md"
+            className="w-full justify-center"
+            onClick={() => navigate('/zones/zone-a')}
+          >
+            <span>View Zone</span>
+            <ArrowRight className="w-4 h-4 ml-1.5" />
+          </Button>
+
+          {/* Quick Review Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleActionClick('approved')}
+              className="flex-1 py-1.5 px-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-center cursor-pointer"
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => handleActionClick('modified')}
+              className="flex-1 py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-center cursor-pointer"
+            >
+              Modify
+            </button>
+            <button
+              onClick={() => handleActionClick('rejected')}
+              className="flex-1 py-1.5 px-2 text-xs font-medium rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors text-center cursor-pointer"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Expandable Technical Details */}
+      {showDetails && (
+        <div className="mt-5 pt-4 border-t border-slate-100 space-y-4">
+          <div>
+            <div className="text-xs font-semibold text-slate-700 mb-2">
               Suggested Resources:
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -79,64 +135,21 @@ export function AIRecommendation({ recommendation = AI_RECOMMENDATION }) {
             </div>
           </div>
 
-          {/* Human review note */}
-          <div className="flex items-center gap-2 text-xs text-slate-500 pt-1">
-            <Info className="w-4 h-4 text-slate-400 shrink-0" />
-            <span>AI-suggested based on incoming reports. Final decisions should be reviewed by a human.</span>
-          </div>
-        </div>
-
-        {/* Right: Actions and View Zone link */}
-        <div className="flex flex-col justify-between gap-4 lg:w-72 lg:border-l lg:border-slate-100 lg:pl-6 shrink-0">
           <div>
-            <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+            <div className="text-xs font-semibold text-slate-700 mb-1.5">
               Route Status
             </div>
-            <div className="text-xs space-y-1.5 text-slate-600">
-              <div className="text-red-700 bg-red-50 p-2 rounded border border-red-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200">
                 Route A is flooded.
               </div>
-              <div className="text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200">
+              <div className="text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
                 Route C is clear (+22m detour).
               </div>
             </div>
           </div>
-
-          <div className="space-y-2 pt-2">
-            <Button
-              variant="default"
-              size="md"
-              className="w-full justify-center"
-              onClick={() => navigate('/zones/zone-a')}
-            >
-              <span>View Zone A</span>
-              <ArrowRight className="w-4 h-4 ml-1.5" />
-            </Button>
-
-            {/* Quick Review Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleActionClick('approved')}
-                className="flex-1 py-1.5 px-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-center"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => handleActionClick('modified')}
-                className="flex-1 py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-center"
-              >
-                Modify
-              </button>
-              <button
-                onClick={() => handleActionClick('rejected')}
-                className="flex-1 py-1.5 px-2 text-xs font-medium rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors text-center"
-              >
-                Reject
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Action feedback message */}
       {feedbackState && (

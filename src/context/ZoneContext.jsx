@@ -3,6 +3,7 @@ import { useDisaster } from './DisasterContext';
 import { useReports } from './ReportContext';
 import { INITIAL_ZONES_DATA, matchReportToZone } from '../data/canonicalZones';
 import { calculateZonePriority } from '../engines/priorityEngine';
+import { calculateZoneDemand } from '../engines/demandEngine';
 import { DEFAULT_PRIORITY_WEIGHTS } from '../config/priorityWeights';
 
 const ZoneContext = createContext(null);
@@ -96,7 +97,25 @@ export function ZoneProvider({ children }) {
     // Run deterministic calculation for each zone
     const calculatedZones = baseZones.map(zone => {
       const assigned = zoneReportsMap[zone.id] || [];
-      return calculateZonePriority(zone, assigned, maxPopulation, weights);
+      const priorityResult = calculateZonePriority(zone, assigned, maxPopulation, weights);
+
+      // Deterministic Resource Demand calculation strictly isolated to this disaster and zone
+      const demand = calculateZoneDemand({
+        zoneId: zone.id,
+        disasterId,
+        peopleAffected: priorityResult.affectedPopulation,
+        severity: priorityResult.priorityBand,
+        medicalNeed: priorityResult.factors?.medicalRisk >= 0.7 ? 'HIGH' : priorityResult.factors?.medicalRisk >= 0.3 ? 'MEDIUM' : 'LOW',
+        strandedPeople: zone.id === 'zone-a' ? 45 : zone.id === 'zone-b' ? 25 : null,
+        accessibilityDifficulty: priorityResult.factors?.accessibilityDifficulty ?? 0.8,
+        vulnerability: priorityResult.factors?.vulnerability ?? 1.0,
+        reports: assigned,
+      });
+
+      return {
+        ...priorityResult,
+        demand,
+      };
     });
 
     // Sort zones by priorityScore descending (highest priority first)
@@ -125,6 +144,11 @@ export function ZoneProvider({ children }) {
     return currentZones.find(z => z.id === zoneId) || null;
   }, [currentZones]);
 
+  const getZoneDemand = useCallback((zoneId) => {
+    const targetZone = currentZones.find(z => z.id === zoneId);
+    return targetZone?.demand || null;
+  }, [currentZones]);
+
   return (
     <ZoneContext.Provider
       value={{
@@ -134,6 +158,7 @@ export function ZoneProvider({ children }) {
         selectZone,
         getZonesByDisaster,
         getZoneById,
+        getZoneDemand,
         recomputeZones,
         weights,
         setWeights

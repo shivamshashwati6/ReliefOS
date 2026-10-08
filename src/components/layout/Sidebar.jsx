@@ -8,13 +8,15 @@ import {
   ClipboardList, 
   Sliders, 
   AlertOctagon, 
+  Activity, 
   Settings, 
   LifeBuoy,
   Bell,
   Building,
   Shield,
   HeartPulse,
-  Package
+  Package,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useDisaster } from '../../context/DisasterContext';
@@ -25,13 +27,30 @@ import { cn } from '../../lib/utils';
 export function Sidebar({ isOpen = true, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, logout } = useAuth();
   const { currentDisaster } = useDisaster();
-  const { getReportsByDisaster, reports } = useReports();
+  const { getReportsByDisaster } = useReports();
 
   const disasterReports = getReportsByDisaster(currentDisaster?.id);
 
-  // 1. Define Role-Specific Navigation items according to requirements
+  // Role display label
+  const getRoleLabel = () => {
+    if (role === ROLES.CITIZEN) return 'Citizen';
+    if (role === ROLES.COMMAND_CENTER) return 'Command Center';
+    if (role === ROLES.DEPARTMENT) {
+      return currentUser?.department
+        ? DEPARTMENT_LABELS[currentUser.department] || 'Department'
+        : 'Department';
+    }
+    return 'User';
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  // 1. Role-Specific Primary Navigation items (Section 7)
   const getNavLinks = () => {
     if (role === ROLES.CITIZEN) {
       return [
@@ -44,7 +63,6 @@ export function Sidebar({ isOpen = true, onClose }) {
     }
 
     if (role === ROLES.DEPARTMENT) {
-      // Pick icon based on department
       let deptIcon = Building;
       if (currentUser?.department === DEPARTMENTS.HEALTH) deptIcon = HeartPulse;
       if (currentUser?.department === DEPARTMENTS.FOOD_SUPPLY) deptIcon = Package;
@@ -56,7 +74,6 @@ export function Sidebar({ isOpen = true, onClose }) {
         { id: 'department-reports', label: 'Reports', icon: FileText, path: '/reports', badge: disasterReports.length },
         { id: 'department-resources', label: 'Resources', icon: Boxes, path: '/resources' },
         { id: 'department-zones', label: 'Priority Zones', icon: MapPin, path: '/zones' },
-        { id: 'department-settings', label: 'Settings', icon: Settings, path: '/settings' },
       ];
     }
 
@@ -65,33 +82,34 @@ export function Sidebar({ isOpen = true, onClose }) {
       { id: 'command-dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/command/dashboard' },
       { id: 'command-reports', label: 'Reports', icon: FileText, path: '/reports', badge: disasterReports.length },
       { id: 'command-zones', label: 'Zones', icon: MapPin, path: '/zones' },
+      { id: 'command-allocation', label: 'Resource Allocation', icon: Boxes, path: '/allocation' },
       { id: 'command-resources', label: 'Resources', icon: Boxes, path: '/resources' },
-      { id: 'command-plans', label: 'Response Plans', icon: ClipboardList, path: '/plans' },
-      { id: 'command-simulation', label: 'Simulation', icon: Sliders, path: '/simulation' },
+      { id: 'command-plans', label: 'Response Plans', icon: ClipboardList, path: '/response-plans' },
+      { id: 'command-monitoring', label: 'Response Monitoring', icon: Activity, path: '/response-monitoring' },
     ];
   };
 
   const navLinks = getNavLinks();
 
-  const handleNavClick = (item) => {
-    navigate(item.path);
+  const handleNavClick = (path) => {
+    navigate(path);
     if (onClose) onClose();
   };
 
-  const isCurrentActive = (item) => {
-    if (item.path === '/command/dashboard') {
+  const isCurrentActive = (path) => {
+    if (path === '/command/dashboard') {
       return location.pathname === '/command/dashboard' || location.pathname === '/';
     }
-    if (item.path === '/citizen/dashboard') {
+    if (path === '/citizen/dashboard') {
       return location.pathname === '/citizen/dashboard';
     }
-    if (item.path === '/department/dashboard') {
+    if (path === '/department/dashboard') {
       return location.pathname === '/department/dashboard';
     }
-    if (item.path === '/department/overview') {
+    if (path === '/department/overview') {
       return location.pathname.startsWith('/department') && location.pathname !== '/department/dashboard';
     }
-    return location.pathname.startsWith(item.path);
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -114,7 +132,7 @@ export function Sidebar({ isOpen = true, onClose }) {
         {/* Logo & Brand Header */}
         <div className="p-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
               <LifeBuoy className="w-5 h-5" />
             </div>
             <div>
@@ -129,16 +147,16 @@ export function Sidebar({ isOpen = true, onClose }) {
         </div>
 
         {/* Clean Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col justify-between">
           <nav className="space-y-1">
             {navLinks.map((item) => {
               const IconComponent = item.icon;
-              const isActive = isCurrentActive(item);
+              const isActive = isCurrentActive(item.path);
 
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavClick(item)}
+                  onClick={() => handleNavClick(item.path)}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left",
                     isActive
@@ -156,7 +174,7 @@ export function Sidebar({ isOpen = true, onClose }) {
                           ? "text-blue-600" 
                           : item.highlight 
                           ? "text-red-600" 
-                          : "text-slate-400 group-hover:text-slate-600"
+                          : "text-slate-400"
                       )}
                     />
                     <span className="truncate">{item.label}</span>
@@ -171,20 +189,46 @@ export function Sidebar({ isOpen = true, onClose }) {
               );
             })}
           </nav>
+
+          {/* Settings at the bottom of navigation */}
+          {role !== ROLES.CITIZEN && (
+            <div className="pt-3 border-t border-slate-100 mt-4">
+              <button
+                onClick={() => handleNavClick('/settings')}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left",
+                  isCurrentActive('/settings')
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                )}
+              >
+                <Settings className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="truncate">Settings</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Bottom Current Disaster / Safety Status Card */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/70">
-          <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-2xs">
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              {role === ROLES.CITIZEN ? 'Active Advisory' : 'Current Incident'}
+        {/* Small User Section at the bottom (Section 7) */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/70">
+          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-slate-200">
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-900 truncate">
+                {currentUser?.name || 'User'}
+              </div>
+              <div className="text-[11px] text-slate-500 truncate">
+                {getRoleLabel()}
+              </div>
             </div>
-            <div className="text-sm font-semibold text-slate-900 leading-snug truncate" title={currentDisaster?.name}>
-              {currentDisaster?.name || 'Assam Flood Response'}
-            </div>
-            <div className="text-xs text-slate-500 truncate mt-0.5">
-              {currentDisaster?.region || 'Morigaon, Assam'}
-            </div>
+
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>
