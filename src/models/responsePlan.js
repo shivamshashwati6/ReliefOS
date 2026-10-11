@@ -81,6 +81,7 @@ export function createResponsePlan({
   notes = 'Initial recommended resource distribution for affected zones.',
   status = PLAN_STATUS.DRAFT,
   createdAt = new Date().toISOString(),
+  routeRecommendation = null,
 } = {}) {
   // Count unique affected zones covered in allocations
   const uniqueZones = new Set(allocations.map(a => a.zoneId));
@@ -110,6 +111,9 @@ export function createResponsePlan({
     totalRequested: { ...totalRequested },
     totalAllocated: { ...totalAllocated },
     remainingInventory: { ...remainingInventory },
+
+    // Optional Disaster-Aware Route Recommendation Snapshot (Step 16)
+    routeRecommendation: routeRecommendation ? JSON.parse(JSON.stringify(routeRecommendation)) : null,
 
     // Human Approval Object (Section 2)
     approval: {

@@ -14,11 +14,19 @@ import {
 import { AI_RECOMMENDATION } from '../../data/demoData';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
+import { useRouteEngine } from '../../context/RouteContext';
+import { ROAD_SEGMENT_STATUS } from '../../config/routeParameters';
 
 export function AIRecommendation({ recommendation = AI_RECOMMENDATION }) {
   const navigate = useNavigate();
+  const routeEngine = useRouteEngine();
   const [feedbackState, setFeedbackState] = useState(null); // 'approved' | 'modified' | 'rejected'
   const [showDetails, setShowDetails] = useState(false);
+
+  const optimalRoute = routeEngine?.optimalHeroRoute;
+  const segments = routeEngine?.segments || [];
+  const segA = segments.find(s => s.id === 'seg-route-a-1');
+  const isRouteABlocked = segA ? segA.status === ROAD_SEGMENT_STATUS.BLOCKED : true;
 
   const handleActionClick = (actionType) => {
     setFeedbackState(actionType);
@@ -136,15 +144,34 @@ export function AIRecommendation({ recommendation = AI_RECOMMENDATION }) {
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-slate-700 mb-1.5">
-              Route Status
+            <div className="text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Route Intelligence (A*)</span>
+              <span className="text-[11px] font-mono text-slate-500 font-normal">Deterministic</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div className="text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200">
-                Route A is flooded.
+              <div className={cn(
+                "p-2.5 rounded-lg border",
+                isRouteABlocked 
+                  ? "text-red-700 bg-red-50 border-red-200" 
+                  : "text-emerald-700 bg-emerald-50 border-emerald-200"
+              )}>
+                {isRouteABlocked 
+                  ? "Route A is flooded (culvert KM 42)." 
+                  : "Route A is clear (18.5 km direct)."}
               </div>
-              <div className="text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                Route C is clear (+22m detour).
+              <div className={cn(
+                "p-2.5 rounded-lg border",
+                !optimalRoute?.success
+                  ? "text-red-700 bg-red-50 border-red-200"
+                  : optimalRoute.primaryCorridor === 'ROUTE_C'
+                  ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                  : "text-blue-700 bg-blue-50 border-blue-200"
+              )}>
+                {!optimalRoute?.success 
+                  ? "All routes blocked."
+                  : optimalRoute.primaryCorridor === 'ROUTE_C'
+                  ? `Route C is selected (+10.7 km / +22m detour).`
+                  : "Route A is currently selected (Direct)."}
               </div>
             </div>
           </div>

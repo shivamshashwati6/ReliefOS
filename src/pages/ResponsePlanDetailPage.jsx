@@ -32,7 +32,8 @@ import {
   User, 
   History, 
   FileCheck, 
-  Activity 
+  Activity,
+  Navigation
 } from 'lucide-react';
 import { useResponsePlan } from '../context/ResponsePlanContext';
 import { useResponseMonitoring } from '../context/ResponseMonitoringContext';
@@ -429,6 +430,55 @@ export default function ResponsePlanDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 3b. DISASTER-AWARE ROUTE RECOMMENDATION (Step 16) */}
+      {plan.routeRecommendation && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                <Navigation className="w-4 h-4" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Recommended Ingress Corridor</h2>
+                <span className="text-[11px] text-slate-500">Deterministic A* pathfinding via connected road network</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                plan.routeRecommendation.routeCondition === 'BLOCKED'
+                  ? 'bg-rose-50 text-rose-700 border-rose-300'
+                  : plan.routeRecommendation.routeCondition === 'PARTIAL'
+                  ? 'bg-amber-50 text-amber-700 border-amber-300'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+              }`}>
+                Corridor: {plan.routeRecommendation.primaryCorridor || 'Route C'} ({plan.routeRecommendation.routeCondition || 'OPEN'})
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+              <span className="text-slate-500 font-medium block">Route Distance</span>
+              <span className="text-base font-bold text-slate-900">{plan.routeRecommendation.totalDistanceKm} km</span>
+              <span className="text-[11px] text-slate-500 block">Est. Transit: ~{plan.routeRecommendation.estimatedMinutes} mins</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1 md:col-span-2">
+              <span className="text-slate-500 font-medium block">Routing Rationale</span>
+              <p className="text-slate-700 font-normal leading-relaxed">
+                {plan.routeRecommendation.explanation}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] flex items-center justify-between">
+            <span>Simulated road corridor intelligence for operational review. Not a live GPS dispatch guarantee.</span>
+            <span className="font-mono text-[10px] text-slate-400">Step 16 Deterministic Engine</span>
+          </div>
+        </div>
+      )}
 
       {/* 4. Planned Actions Table (Section 9) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">

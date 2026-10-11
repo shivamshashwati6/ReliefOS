@@ -8,7 +8,7 @@ import { ROLES, ROLE_LABELS, DEPARTMENT_LABELS } from '../../config/roles';
 
 export function TopHeader({ onToggleSidebar, onOpenAlerts }) {
   const navigate = useNavigate();
-  const { currentDisaster } = useDisaster();
+  const { currentDisaster, disasters, selectDisaster } = useDisaster();
   const { currentUser, role, logout } = useAuth();
 
   const handleLogout = () => {
@@ -47,9 +47,36 @@ export function TopHeader({ onToggleSidebar, onOpenAlerts }) {
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight truncate">
-                {currentDisaster.name || 'Assam Flood Response'}
-              </h1>
+              {disasters.length > 1 ? (
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="disaster-switcher" className="sr-only">Switch Active Disaster</label>
+                  <select
+                    id="disaster-switcher"
+                    value={currentDisaster?.id || ''}
+                    onChange={(e) => {
+                      if (e.target.value === '__NEW__') {
+                        navigate('/create-disaster');
+                      } else {
+                        selectDisaster(e.target.value);
+                      }
+                    }}
+                    className="text-xs sm:text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[240px] sm:max-w-none truncate"
+                  >
+                    {disasters.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.region})
+                      </option>
+                    ))}
+                    {role === ROLES.COMMAND_CENTER && (
+                      <option value="__NEW__">+ Create New Disaster...</option>
+                    )}
+                  </select>
+                </div>
+              ) : (
+                <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight truncate">
+                  {currentDisaster?.name || 'Assam Flood Response'}
+                </h1>
+              )}
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 Active
@@ -59,7 +86,7 @@ export function TopHeader({ onToggleSidebar, onOpenAlerts }) {
               </span>
             </div>
             <p className="text-xs text-slate-500 truncate">
-              {currentDisaster.region || 'Morigaon, Assam'}
+              {currentDisaster?.region || 'Morigaon, Assam'}
             </p>
           </div>
         </div>

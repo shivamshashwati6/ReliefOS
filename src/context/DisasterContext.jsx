@@ -1,20 +1,31 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const INITIAL_DISASTER = {
-  id: "DISASTER-001",
-  name: "Assam Flood Response",
-  type: "Flood",
-  region: "Morigaon, Assam",
-  startTime: new Date().toISOString(),
-  status: "Active",
-  isSimulated: true
-};
+const INITIAL_DISASTERS = [
+  {
+    id: "DISASTER-001",
+    name: "Assam Flood Response",
+    type: "Flood",
+    region: "Morigaon, Assam",
+    startTime: "2026-10-06T04:30:00Z",
+    status: "Active",
+    isSimulated: true
+  },
+  {
+    id: "DISASTER-002",
+    name: "Barpeta Flash Flood",
+    type: "Flood",
+    region: "Barpeta, Assam",
+    startTime: "2026-10-08T10:00:00Z",
+    status: "Active",
+    isSimulated: true
+  }
+];
 
 const DisasterContext = createContext(null);
 
 export function DisasterProvider({ children }) {
-  const [disasters, setDisasters] = useState([INITIAL_DISASTER]);
-  const [currentDisaster, setCurrentDisaster] = useState(INITIAL_DISASTER);
+  const [disasters, setDisasters] = useState(INITIAL_DISASTERS);
+  const [currentDisaster, setCurrentDisaster] = useState(INITIAL_DISASTERS[0]);
 
   const createDisaster = (disasterData) => {
     const newId = `DISASTER-${String(disasters.length + 1).padStart(3, '0')}`;

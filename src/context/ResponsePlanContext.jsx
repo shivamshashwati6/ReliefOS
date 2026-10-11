@@ -13,6 +13,7 @@
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import { useAllocation } from './AllocationContext';
 import { useDisaster } from './DisasterContext';
+import { useRouteEngine } from './RouteContext';
 import { 
   PLAN_STATUS, 
   APPROVAL_STATUS, 
@@ -34,6 +35,7 @@ export function ResponsePlanProvider({ children }) {
   } = useAllocation();
 
   const activeDisasterId = currentDisaster?.id || 'DISASTER-001';
+  const routeEngine = useRouteEngine();
 
   // In-memory collection of all response plans
   const [plans, setPlans] = useState([]);
@@ -53,6 +55,7 @@ export function ResponsePlanProvider({ children }) {
         totalRequested,
         totalAllocated,
         remainingInventory,
+        routeRecommendation: routeEngine?.optimalHeroRoute || null,
         status: PLAN_STATUS.UNDER_REVIEW,
         notes: 'Initial operational response plan generated for Morigaon Flood sectors.',
       });
@@ -110,6 +113,7 @@ export function ResponsePlanProvider({ children }) {
       totalRequested,
       totalAllocated,
       remainingInventory,
+      routeRecommendation: options.routeRecommendation || routeEngine?.optimalHeroRoute || null,
       notes: options.notes || 'Recommended distribution plan based on current zone priorities.',
       status: PLAN_STATUS.DRAFT,
     });
@@ -126,7 +130,8 @@ export function ResponsePlanProvider({ children }) {
     unmetDemand, 
     totalRequested, 
     totalAllocated, 
-    remainingInventory
+    remainingInventory,
+    routeEngine?.optimalHeroRoute
   ]);
 
   /**

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Plus, MapPin, Clock, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Plus, MapPin, ArrowLeft } from 'lucide-react';
 import { useReports } from '../context/ReportContext';
 
 export function CitizenMyReportsPage() {

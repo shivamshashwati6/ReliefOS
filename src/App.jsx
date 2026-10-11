@@ -25,6 +25,7 @@ import ResponseMonitoringPage from './pages/ResponseMonitoringPage';
 import SafetyUpdatesPage from './pages/SafetyUpdatesPage';
 import IncidentAnalyticsPage from './pages/IncidentAnalyticsPage';
 import IncidentTrendsPage from './pages/IncidentTrendsPage';
+import SimulationLabPage from './pages/SimulationLabPage';
 
 import { useAuth } from './context/AuthContext';
 import { ROLES, ROLE_DEFAULT_ROUTES } from './config/roles';
@@ -241,7 +242,15 @@ export function App() {
         />
         <Route
           path="/simulation"
-          element={<Navigate to="/response-monitoring" replace />}
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER, ROLES.DEPARTMENT]}>
+              <SimulationLabPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/simulation-lab"
+          element={<Navigate to="/simulation" replace />}
         />
         <Route
           path="/allocation"

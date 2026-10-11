@@ -20,7 +20,8 @@ import {
   XCircle, 
   ShieldAlert,
   Layers,
-  FileCheck2
+  FileCheck2,
+  Navigation
 } from 'lucide-react';
 import { useResponsePlan } from '../context/ResponsePlanContext';
 import { useDisaster } from '../context/DisasterContext';
@@ -175,6 +176,14 @@ export default function ResponsePlansPage() {
                     <span className="font-bold text-slate-800">{plan.resourcesCount} types</span>
                   </div>
                 </div>
+
+                {plan.routeRecommendation && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-blue-700 bg-blue-50/80 px-2.5 py-1 rounded-md border border-blue-200">
+                    <Navigation className="w-3 h-3 text-blue-600 shrink-0" />
+                    <span className="font-semibold">{plan.routeRecommendation.primaryCorridor || 'Route C'}</span>
+                    <span className="text-slate-500">• {plan.routeRecommendation.totalDistanceKm} km ({plan.routeRecommendation.routeCondition || 'OPEN'})</span>
+                  </div>
+                )}
 
                 <p className="text-xs text-slate-600 line-clamp-2">
                   {plan.notes || 'Recommended distribution plan derived from deterministic allocation engine.'}

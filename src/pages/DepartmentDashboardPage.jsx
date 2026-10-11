@@ -10,43 +10,29 @@ import {
   ShieldAlert, 
   Activity,
   ArrowRight,
-  Clock,
   Droplet,
-  Ship,
-  Truck
+  Ship
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useDisaster } from '../context/DisasterContext';
-import { useReports } from '../context/ReportContext';
-import { PRIORITY_ZONES } from '../data/demoData';
 import { DEPARTMENTS } from '../config/roles';
 import StatusBadge from '../components/ui/StatusBadge';
 import DepartmentAllocationCard from '../components/dashboard/DepartmentAllocationCard';
 
 export function DepartmentDashboardPage() {
   const { currentUser } = useAuth();
-  const { currentDisaster } = useDisaster();
-  const { reports } = useReports();
   const location = useLocation();
-  const navigate = useNavigate();
 
-  // Determine active department: from route subpath or user's department, fallback to HEALTH
-  const getInitialDept = () => {
+  // Determine active department cleanly: route-driven or user selection
+  const routeDept = (() => {
     if (location.pathname.includes('/health')) return DEPARTMENTS.HEALTH;
     if (location.pathname.includes('/supply')) return DEPARTMENTS.FOOD_SUPPLY;
     if (location.pathname.includes('/rescue')) return DEPARTMENTS.RESCUE;
-    return currentUser?.department || DEPARTMENTS.HEALTH;
-  };
+    return null;
+  })();
 
-  const [activeDept, setActiveDept] = useState(getInitialDept);
-
-  // Sync if location changes
-  React.useEffect(() => {
-    if (location.pathname.includes('/health')) setActiveDept(DEPARTMENTS.HEALTH);
-    else if (location.pathname.includes('/supply')) setActiveDept(DEPARTMENTS.FOOD_SUPPLY);
-    else if (location.pathname.includes('/rescue')) setActiveDept(DEPARTMENTS.RESCUE);
-    else if (currentUser?.department) setActiveDept(currentUser.department);
-  }, [location.pathname, currentUser?.department]);
+  const [selectedDept, setSelectedDept] = useState(null);
+  const activeDept = routeDept || selectedDept || currentUser?.department || DEPARTMENTS.HEALTH;
+  const setActiveDept = setSelectedDept;
 
   return (
     <div className="space-y-6">

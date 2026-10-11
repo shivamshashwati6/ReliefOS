@@ -18,6 +18,8 @@ import { useAuth } from '../context/AuthContext';
 import { useReports } from '../context/ReportContext';
 import { useDisaster } from '../context/DisasterContext';
 import { useSafetyUpdate } from '../context/SafetyUpdateContext';
+import { useReliefShelter } from '../context/ReliefShelterContext';
+import { SHELTER_SAFETY_DISCLAIMER } from '../models/reliefShelter';
 import StatusBadge from '../components/ui/StatusBadge';
 
 export function CitizenDashboardPage() {
@@ -26,6 +28,8 @@ export function CitizenDashboardPage() {
   const { reports } = useReports();
   const { currentDisaster } = useDisaster();
   const { publishedDisasterUpdates } = useSafetyUpdate();
+  const { shelters } = useReliefShelter();
+  const sampleShelter = shelters[0] || null;
 
   // Citizen's personal reports list
   const citizenReports = reports.slice(0, 2);
@@ -236,19 +240,23 @@ export function CitizenDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* 1. Shelter */}
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
-              <Building className="w-4 h-4 text-slate-500" />
-              <span>Shelter</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <Building className="w-4 h-4 text-slate-500" />
+                <span>Simulated Shelter</span>
+              </div>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                Prototype Point
+              </span>
             </div>
             <div className="text-sm font-bold text-slate-900">
-              Morigaon High School Shelter
+              {sampleShelter ? sampleShelter.name : 'Sector 4 Community Point'}
             </div>
             <div className="text-xs text-slate-600">
-              Main Road, Sector 2 • 0.8 km away
+              {sampleShelter ? `${sampleShelter.area} • Schematic location for planning` : 'Morigaon Sector • Schematic location'}
             </div>
-            <div className="pt-1 flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Open & Accessible</span>
+            <div className="pt-1 text-[11px] text-amber-800 font-medium">
+              <span>{SHELTER_SAFETY_DISCLAIMER}</span>
             </div>
           </div>
 
@@ -259,14 +267,14 @@ export function CitizenDashboardPage() {
               <span>Medical Help</span>
             </div>
             <div className="text-sm font-bold text-slate-900">
-              Civil Hospital Aid Post
+              Emergency Medical Dispatch (108)
             </div>
             <div className="text-xs text-slate-600">
-              Old Bus Stand Ward • 1.2 km away
+              State Emergency Medical Transport • Call 108 for immediate paramedic dispatch
             </div>
             <div className="pt-1 flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Doctor on duty • Open 24/7</span>
+              <span>National Toll-Free Helpline</span>
             </div>
           </div>
 

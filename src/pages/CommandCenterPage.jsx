@@ -12,7 +12,7 @@ import SafetyUpdatesSummaryCard from '../components/dashboard/SafetyUpdatesSumma
 import IncidentAnalyticsSummaryCard from '../components/dashboard/IncidentAnalyticsSummaryCard';
 import { useDisaster } from '../context/DisasterContext';
 
-export function CommandCenterPage({ onOpenAlerts }) {
+export function CommandCenterPage() {
   const { currentDisaster } = useDisaster();
   const [selectedZoneId, setSelectedZoneId] = useState('zone-a');
 

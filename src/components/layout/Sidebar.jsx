@@ -17,7 +17,8 @@ import {
   Package,
   LogOut,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Sliders
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useDisaster } from '../../context/DisasterContext';
@@ -77,6 +78,7 @@ export function Sidebar({ isOpen = true, onClose }) {
         { id: 'department-reports', label: 'Reports', icon: FileText, path: '/reports', badge: disasterReports.length },
         { id: 'department-resources', label: 'Resources', icon: Boxes, path: '/resources' },
         { id: 'department-zones', label: 'Priority Zones', icon: MapPin, path: '/zones' },
+        { id: 'department-simulation', label: 'What-If Lab', icon: Sliders, path: '/simulation' },
       ];
     }
 
@@ -89,6 +91,7 @@ export function Sidebar({ isOpen = true, onClose }) {
       { id: 'command-reports', label: 'Reports', icon: FileText, path: '/reports', badge: disasterReports.length },
       { id: 'command-zones', label: 'Zones', icon: MapPin, path: '/zones' },
       { id: 'command-allocation', label: 'Resource Allocation', icon: Boxes, path: '/allocation' },
+      { id: 'command-simulation', label: 'What-If Lab', icon: Sliders, path: '/simulation' },
       { id: 'command-resources', label: 'Resources', icon: Boxes, path: '/resources' },
       { id: 'command-plans', label: 'Response Plans', icon: ClipboardList, path: '/response-plans' },
       { id: 'command-monitoring', label: 'Response Monitoring', icon: Activity, path: '/response-monitoring' },

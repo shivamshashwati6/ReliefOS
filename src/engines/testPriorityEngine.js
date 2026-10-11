@@ -8,14 +8,9 @@ import {
   getPriorityBand,
   normalizePopulation,
   mapSeverityToScore,
-  calculateSeverity,
   calculateMedicalRisk,
-  calculateResourceShortage,
-  calculateAccessibility,
-  calculateVulnerability,
   calculateScoreBreakdown,
-  generateScoreExplanation,
-  calculateZonePriority
+  generateScoreExplanation
 } from './priorityEngine.js';
 
 import {

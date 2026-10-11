@@ -6,6 +6,8 @@ import { DisasterProvider } from './context/DisasterContext';
 import { ReportProvider } from './context/ReportContext';
 import { ZoneProvider } from './context/ZoneContext';
 import { AllocationProvider } from './context/AllocationContext';
+import { SimulationProvider } from './context/SimulationContext';
+import { RouteProvider } from './context/RouteContext';
 import { ResponsePlanProvider } from './context/ResponsePlanContext';
 import { ResponseMonitoringProvider } from './context/ResponseMonitoringContext';
 import { SafetyUpdateProvider } from './context/SafetyUpdateContext';
@@ -22,17 +24,21 @@ createRoot(document.getElementById('root')).render(
           <ReportProvider>
             <ZoneProvider>
               <AllocationProvider>
-                <ResponsePlanProvider>
-                  <ResponseMonitoringProvider>
-                    <SafetyUpdateProvider>
-                      <IncidentTrendProvider>
-                        <ReliefShelterProvider>
-                          <App />
-                        </ReliefShelterProvider>
-                      </IncidentTrendProvider>
-                    </SafetyUpdateProvider>
-                  </ResponseMonitoringProvider>
-                </ResponsePlanProvider>
+                <SimulationProvider>
+                  <RouteProvider>
+                    <ResponsePlanProvider>
+                      <ResponseMonitoringProvider>
+                        <SafetyUpdateProvider>
+                          <IncidentTrendProvider>
+                            <ReliefShelterProvider>
+                              <App />
+                            </ReliefShelterProvider>
+                          </IncidentTrendProvider>
+                        </SafetyUpdateProvider>
+                      </ResponseMonitoringProvider>
+                    </ResponsePlanProvider>
+                  </RouteProvider>
+                </SimulationProvider>
               </AllocationProvider>
             </ZoneProvider>
           </ReportProvider>

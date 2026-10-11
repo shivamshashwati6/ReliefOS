@@ -1,45 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LifeBuoy, MapPin, PhoneCall, ShieldCheck, ArrowLeft, ExternalLink } from 'lucide-react';
+import { MapPin, PhoneCall, ArrowLeft, AlertTriangle, Home } from 'lucide-react';
+import { useReliefShelter } from '../context/ReliefShelterContext';
+import { useDisaster } from '../context/DisasterContext';
+import { SHELTER_SAFETY_DISCLAIMER } from '../models/reliefShelter';
 
 export function CitizenHelpPage() {
   const navigate = useNavigate();
+  const { currentDisaster } = useDisaster();
+  const { shelters, calculateRemainingCapacity } = useReliefShelter();
 
   const helplines = [
-    { name: 'National Emergency Service', number: '112', desc: 'Police, Fire and Ambulance integration' },
-    { name: 'Disaster Emergency Helpline', number: '1070', desc: 'State Disaster Management Authority (ASDMA)' },
-    { name: 'Emergency Medical Service', number: '108', desc: 'Medical transport & field paramedic dispatch' },
-    { name: 'Morigaon Control Room', number: '03678-240225', desc: 'District Commissioner Emergency Ops Desk' },
-  ];
-
-  const shelters = [
-    {
-      id: 'sh-1',
-      name: 'Morigaon Central High School Relief Center',
-      distance: '0.8 km',
-      address: 'Main Road, Sector 2, Morigaon',
-      capacity: '320 / 400 persons',
-      facilities: ['Drinking Water Tank', 'Medical First Aid Post', 'Mobile Phone Charging', 'Dry Ration Kits'],
-      status: 'Open & Accepting Residents'
-    },
-    {
-      id: 'sh-2',
-      name: 'Community Hall Relief Point B',
-      distance: '1.4 km',
-      address: 'Near Old Bus Stand, Ward 4',
-      capacity: '190 / 200 persons',
-      facilities: ['Water Purification Sachet Station', 'Shelter Bedding', 'Sanitation Blocks'],
-      status: 'Near Full Capacity'
-    },
-    {
-      id: 'sh-3',
-      name: 'PMR College Flood Shelter Campus',
-      distance: '2.6 km',
-      address: 'Higher Ground Highway Corridor',
-      capacity: '150 / 600 persons',
-      facilities: ['Helipad Access Point', 'Field Doctor Clinic', 'Community Kitchen'],
-      status: 'Open & Accepting Residents'
-    }
+    { name: 'National Emergency Service', number: '112', desc: 'Police, Fire and Ambulance emergency response' },
+    { name: 'Disaster Helpline', number: '1070', desc: 'State Disaster Management Authority helpline' },
+    { name: 'Emergency Medical Service', number: '108', desc: 'Medical transport and field paramedic ambulance' },
+    { name: 'District Control Room', number: '03678-240225', desc: 'Emergency Operations Center dispatch desk' },
   ];
 
   return (
@@ -47,7 +22,7 @@ export function CitizenHelpPage() {
       <div className="pb-4 border-b border-slate-200">
         <button
           onClick={() => navigate('/citizen/dashboard')}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 mb-2"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 mb-2 cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Citizen Portal</span>
@@ -56,10 +31,11 @@ export function CitizenHelpPage() {
           Nearby Help & Emergency Contacts
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">
-          Find accessible relief shelters, active community kitchens, and direct phone assistance.
+          Emergency telephone helplines and simulated community relief points for {currentDisaster?.name || 'Active Disaster'}.
         </p>
       </div>
 
+      {/* Emergency Helplines Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {helplines.map((h) => (
           <div key={h.number} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex items-center justify-between">
@@ -78,43 +54,79 @@ export function CitizenHelpPage() {
         ))}
       </div>
 
+      {/* Simulated Relief Points Section with Mandatory Safety Disclaimer */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-900">Active Relief Shelters</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {shelters.map((s) => (
-            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-slate-900 text-sm">{s.name}</h3>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
-                    {s.distance}
-                  </span>
-                </div>
-                <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>{s.address}</span>
-                </div>
-                <div className="text-xs font-medium text-slate-600 pt-1">
-                  Capacity: <span className="font-bold text-slate-900">{s.capacity}</span>
-                </div>
-                <div className="pt-2 flex flex-wrap gap-1">
-                  {s.facilities.map((fac) => (
-                    <span key={fac} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
-                      {fac}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-emerald-700 font-medium flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  {s.status}
-                </span>
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <Home className="w-5 h-5 text-blue-600" />
+            <span>Community Relief Points (Simulated)</span>
+          </h2>
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 w-fit">
+            Prototype Data
+          </span>
         </div>
+
+        {/* Safety Disclaimer Banner */}
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="leading-relaxed">
+            <strong className="block text-amber-950 font-bold">{SHELTER_SAFETY_DISCLAIMER}</strong>
+            <span className="text-amber-800 text-[11px]">
+              These relief points represent simulated models for planning exercises. Do not travel to unverified facilities without confirmation from local emergency personnel.
+            </span>
+          </div>
+        </div>
+
+        {shelters.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-500 space-y-1">
+            <p className="font-semibold text-slate-700">No simulated shelter points have been configured for this disaster.</p>
+            <p className="text-[11px] text-slate-400">Shelter modeling data is isolated per active disaster event.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
+            {shelters.map((s) => {
+              const remaining = calculateRemainingCapacity(s);
+
+              return (
+                <div key={s.shelterId} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-slate-900 text-sm">{s.name}</h3>
+                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
+                        Simulated Point
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{s.area} • Schematic location for operational modeling</span>
+                    </div>
+
+                    <div className="text-xs text-slate-600 pt-1 flex items-center gap-2">
+                      <span>Simulated Capacity: <strong>{s.capacity}</strong></span>
+                      <span>•</span>
+                      <span>Current: <strong>{s.occupancy}</strong></span>
+                      <span>•</span>
+                      <span className="text-emerald-700 font-semibold">{remaining} available</span>
+                    </div>
+
+                    <div className="pt-2 flex flex-wrap gap-1.5">
+                      {s.services.map((svc, i) => (
+                        <span key={i} className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">
+                          {svc}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-mono">
+                    ID: {s.shelterId} • Status: {s.status}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

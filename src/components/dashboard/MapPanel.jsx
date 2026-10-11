@@ -22,7 +22,9 @@ import {
   ExternalLink,
   RotateCcw,
   Info,
-  Compass
+  Compass,
+  Navigation,
+  ShieldAlert
 } from 'lucide-react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -30,18 +32,24 @@ import 'leaflet/dist/leaflet.css';
 import { useDisaster } from '../../context/DisasterContext';
 import { useZones } from '../../context/ZoneContext';
 import { useReliefShelter } from '../../context/ReliefShelterContext';
+import { useRouteEngine } from '../../context/RouteContext';
 import { useAuth } from '../../context/AuthContext';
 import { ROLES } from '../../config/roles';
 import { SHELTER_SAFETY_DISCLAIMER } from '../../models/reliefShelter';
+import { ROAD_SEGMENT_STATUS, SIMULATED_ROAD_SAFETY_DISCLAIMER } from '../../config/routeParameters';
 
 export function MapPanel({ selectedZoneId, onSelectZone }) {
   const navigate = useNavigate();
   const { currentDisaster } = useDisaster();
   const { zones, selectZone } = useZones();
   const { shelters, calculateRemainingCapacity } = useReliefShelter();
+  const routeEngine = useRouteEngine();
   const { role } = useAuth();
 
   const isCitizen = role === ROLES.CITIZEN;
+  const canManageRoads = !isCitizen && Boolean(routeEngine?.canManageRoads);
+  const segments = routeEngine?.segments || [];
+  const optimalHeroRoute = routeEngine?.optimalHeroRoute;
 
   // View Mode: 'SCHEMATIC' (tactical river basin) or 'GIS' (interactive Leaflet)
   const [viewMode, setViewMode] = useState('SCHEMATIC');
@@ -95,6 +103,10 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
     setSelectedEntityOverride({ type: 'SHELTER', data: shelter });
   };
 
+  const handleSegmentClick = (segment) => {
+    setSelectedEntityOverride({ type: 'ROUTE_SEGMENT', data: segment });
+  };
+
   const handleResetFilters = () => {
     setPriorityFilter('ALL');
     setShowShelters(true);
@@ -132,7 +144,7 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
               viewMode === 'SCHEMATIC' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Tactical Basin View
+            Basin Overview
           </button>
           <button
             type="button"
@@ -237,6 +249,75 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
         </button>
       </div>
 
+      {/* 2b. ROUTE INTELLIGENCE RIBBON (Step 16) */}
+      {!isCitizen && showRoutes && (
+        <div className="px-3.5 py-2 bg-blue-50/70 border-b border-blue-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <Navigation className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+            <span className="font-semibold text-slate-800">Route Intelligence:</span>
+            {optimalHeroRoute?.success ? (
+              <span className="flex items-center gap-1.5 flex-wrap">
+                <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  optimalHeroRoute.primaryCorridor === 'ROUTE_C'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-blue-100 text-blue-800 border border-blue-300'
+                }`}>
+                  {optimalHeroRoute.primaryCorridor === 'ROUTE_C' ? 'Route C (High Bypass)' : 'Route A (Direct)'}
+                </span>
+                <span className="text-slate-600">
+                  {optimalHeroRoute.totalDistanceKm} km • ~{optimalHeroRoute.estimatedMinutes}m transit
+                </span>
+                {optimalHeroRoute.primaryCorridor === 'ROUTE_C' && (
+                  <span className="text-amber-800 font-medium text-[11px] bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">
+                    Route A blocked at KM 42 (+10.7 km detour)
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                All Corridors Blocked — No Navigable Route
+              </span>
+            )}
+          </div>
+
+          {canManageRoads && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-slate-500 font-medium">Demo Simulator:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  routeEngine?.blockSegment('seg-route-a-1');
+                  routeEngine?.blockSegment('seg-route-a-2');
+                }}
+                className="px-2 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 text-[11px] font-semibold transition cursor-pointer"
+                title="Simulate Route A flood breach (Forces A* recalculation to Route C)"
+              >
+                Block Route A (Flood)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  routeEngine?.openSegment('seg-route-a-1');
+                  routeEngine?.openSegment('seg-route-a-2');
+                }}
+                className="px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 text-[11px] font-semibold transition cursor-pointer"
+                title="Simulate water receding on Route A (Restores direct Route A)"
+              >
+                Reopen Route A
+              </button>
+              <button
+                type="button"
+                onClick={() => routeEngine?.resetToDemoBaseline()}
+                className="p-1 rounded text-slate-600 hover:text-slate-900 hover:bg-blue-100 transition cursor-pointer"
+                title="Reset road network to canonical state"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 3. MAP CANVAS (SCHEMATIC OR LEAFLET) */}
       <div className="relative flex-1 bg-slate-50 overflow-hidden min-h-[300px]">
         {viewMode === 'GIS' ? (
@@ -316,7 +397,7 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
                   <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold">Simulated Shelters: </span>
-                    <span>Shelter coordinates are schematic (non-physical). View them in Tactical Basin View or select below.</span>
+                    <span>Shelter coordinates are schematic (non-physical). View them in Basin Overview or select below.</span>
                   </div>
                 </div>
               </div>
@@ -445,33 +526,106 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
               );
             })}
 
-            {/* RELIEF ROUTES */}
-            {showRoutes && (
+            {/* RELIEF ROUTES (Step 16 Dynamic Engine) */}
+            {showRoutes && !isCitizen && (
               <>
-                {/* Route A: Blocked */}
-                <path
-                  d="M 520,490 L 460,400 L 410,340 L 340,270"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="3.5"
-                  strokeDasharray="6,4"
-                />
-                <g transform="translate(430, 370)">
-                  <rect x="-48" y="-11" width="96" height="20" rx="4" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1" />
-                  <text x="0" y="3" textAnchor="middle" fill="#991b1b" fontSize="9" fontWeight="bold">Route A: Blocked</text>
-                </g>
+                {segments.map((seg) => {
+                  const isSelected = optimalHeroRoute?.segments?.some(s => s.id === seg.id);
+                  const isBlocked = seg.status === ROAD_SEGMENT_STATUS.BLOCKED;
+                  const isPartial = seg.status === ROAD_SEGMENT_STATUS.PARTIAL;
 
-                {/* Route C: Active Relief Corridor */}
-                <path
-                  d="M 520,490 L 620,470 L 590,360 L 470,220 L 370,240 L 340,270"
-                  fill="none"
-                  stroke="#16a34a"
-                  strokeWidth="3.5"
-                />
-                <g transform="translate(620, 395)">
-                  <rect x="-52" y="-11" width="104" height="20" rx="4" fill="#dcfce7" stroke="#86efac" strokeWidth="1" />
-                  <text x="0" y="3" textAnchor="middle" fill="#166534" fontSize="9" fontWeight="bold">Route C: Open Relief</text>
-                </g>
+                  let strokeColor = '#94a3b8'; // default available alternative
+                  let strokeDash = '4,4';
+                  let strokeWidth = 2.5;
+
+                  if (isBlocked) {
+                    strokeColor = '#ef4444';
+                    strokeDash = '6,4';
+                    strokeWidth = 3.5;
+                  } else if (isSelected) {
+                    if (isPartial) {
+                      strokeColor = '#f59e0b';
+                      strokeDash = '6,3';
+                      strokeWidth = 4;
+                    } else {
+                      strokeColor = '#16a34a';
+                      strokeDash = 'none';
+                      strokeWidth = 4;
+                    }
+                  }
+
+                  return (
+                    <g 
+                      key={seg.id} 
+                      className="cursor-pointer transition-opacity hover:opacity-80"
+                      onClick={() => handleSegmentClick(seg)}
+                    >
+                      <path
+                        d={seg.svgPath}
+                        fill="none"
+                        stroke={strokeColor}
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={strokeDash}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Route A Interactive Pill */}
+                {(() => {
+                  const segA1 = segments.find(s => s.id === 'seg-route-a-1');
+                  const isABlocked = segA1?.status === ROAD_SEGMENT_STATUS.BLOCKED;
+                  return (
+                    <g 
+                      transform="translate(430, 370)" 
+                      className="cursor-pointer hover:scale-105 transition-transform" 
+                      onClick={() => handleSegmentClick(segA1 || segments[0])}
+                    >
+                      {isABlocked ? (
+                        <>
+                          <rect x="-56" y="-11" width="112" height="20" rx="4" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1" />
+                          <text x="0" y="3" textAnchor="middle" fill="#991b1b" fontSize="9" fontWeight="bold">Route A: Blocked (KM 42)</text>
+                        </>
+                      ) : (
+                        <>
+                          <rect x="-60" y="-11" width="120" height="20" rx="4" fill="#dcfce7" stroke="#86efac" strokeWidth="1" />
+                          <text x="0" y="3" textAnchor="middle" fill="#166534" fontSize="9" fontWeight="bold">Route A: Direct (18.5 km)</text>
+                        </>
+                      )}
+                    </g>
+                  );
+                })()}
+
+                {/* Route C Interactive Pill */}
+                {(() => {
+                  const segC = segments.find(s => s.id === 'seg-route-c-2');
+                  const isCSelected = optimalHeroRoute?.primaryCorridor === 'ROUTE_C';
+                  const isCBlocked = segC?.status === ROAD_SEGMENT_STATUS.BLOCKED;
+                  return (
+                    <g 
+                      transform="translate(620, 395)" 
+                      className="cursor-pointer hover:scale-105 transition-transform" 
+                      onClick={() => handleSegmentClick(segC || segments[2])}
+                    >
+                      {isCBlocked ? (
+                        <>
+                          <rect x="-52" y="-11" width="104" height="20" rx="4" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1" />
+                          <text x="0" y="3" textAnchor="middle" fill="#991b1b" fontSize="9" fontWeight="bold">Route C: Blocked</text>
+                        </>
+                      ) : isCSelected ? (
+                        <>
+                          <rect x="-64" y="-11" width="128" height="20" rx="4" fill="#dcfce7" stroke="#86efac" strokeWidth="1" />
+                          <text x="0" y="3" textAnchor="middle" fill="#166534" fontSize="9" fontWeight="bold">Route C: Selected ({optimalHeroRoute?.totalDistanceKm || 29.2} km)</text>
+                        </>
+                      ) : (
+                        <>
+                          <rect x="-60" y="-11" width="120" height="20" rx="4" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1" />
+                          <text x="0" y="3" textAnchor="middle" fill="#475569" fontSize="9" fontWeight="bold">Route C: Alternative Bypass</text>
+                        </>
+                      )}
+                    </g>
+                  );
+                })()}
               </>
             )}
 
@@ -602,6 +756,91 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
                 </div>
               );
             })()
+          ) : activeEntity.type === 'ROUTE_SEGMENT' ? (
+            /* Selected Route Segment Details (Step 16) */
+            (() => {
+              const seg = activeEntity.data;
+              return (
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        <Navigation className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="font-bold text-slate-900 text-sm">{seg.name}</span>
+                        <span className="ml-2 text-slate-500 font-mono text-[11px]">• Corridor: {seg.routeCode}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                        seg.status === ROAD_SEGMENT_STATUS.BLOCKED ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                        seg.status === ROAD_SEGMENT_STATUS.PARTIAL ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                        'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      }`}>
+                        {seg.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-slate-600">
+                      <span>Length: <strong>{seg.distanceKm} km</strong></span>
+                      <span>•</span>
+                      <span>Surface: <strong>{seg.surface}</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="text-slate-600">
+                    <strong>Reported Road Condition:</strong> {seg.condition}
+                  </div>
+
+                  {canManageRoads ? (
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-200 flex-wrap">
+                      <span className="text-[11px] text-slate-500 font-medium">Command Status Override:</span>
+                      <button
+                        type="button"
+                        onClick={() => routeEngine?.setSegmentStatus(seg.id, ROAD_SEGMENT_STATUS.BLOCKED)}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold border transition cursor-pointer ${
+                          seg.status === ROAD_SEGMENT_STATUS.BLOCKED 
+                            ? 'bg-rose-600 text-white border-rose-600' 
+                            : 'bg-white hover:bg-rose-50 text-rose-700 border-rose-300'
+                        }`}
+                      >
+                        Mark Blocked
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => routeEngine?.setSegmentStatus(seg.id, ROAD_SEGMENT_STATUS.PARTIAL)}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold border transition cursor-pointer ${
+                          seg.status === ROAD_SEGMENT_STATUS.PARTIAL 
+                            ? 'bg-amber-500 text-white border-amber-500' 
+                            : 'bg-white hover:bg-amber-50 text-amber-700 border-amber-300'
+                        }`}
+                      >
+                        Mark Partial Caution
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => routeEngine?.setSegmentStatus(seg.id, ROAD_SEGMENT_STATUS.OPEN)}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold border transition cursor-pointer ${
+                          seg.status === ROAD_SEGMENT_STATUS.OPEN 
+                            ? 'bg-emerald-600 text-white border-emerald-600' 
+                            : 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-300'
+                        }`}
+                      >
+                        Mark Open / Cleared
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-slate-400 italic">
+                      Read-only simulated road segment status. Command Center authorization required to alter road blockage status.
+                    </div>
+                  )}
+
+                  {/* Safety Disclaimer Banner */}
+                  <div className="p-2 rounded bg-slate-100 border border-slate-200 text-slate-500 text-[11px]">
+                    <strong>{SIMULATED_ROAD_SAFETY_DISCLAIMER}</strong>
+                  </div>
+                </div>
+              );
+            })()
           ) : (
             /* Selected Shelter Details (Section 5 & 6) */
             (() => {
@@ -686,7 +925,15 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-0.5 bg-emerald-600" />
-              <span>Open Corridor</span>
+              <span>Selected Corridor</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 bg-slate-400 border-dashed" />
+              <span>Alternative</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 bg-amber-500 border-dashed" />
+              <span>Partial Caution</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-0.5 bg-rose-500 border-dashed" />
@@ -695,7 +942,7 @@ export function MapPanel({ selectedZoneId, onSelectZone }) {
           </div>
 
           <span className="text-[11px] text-slate-400">
-            Simulated tactical environment
+            Simulated disaster response environment
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertTriangle, Info, ArrowLeft, Radio } from 'lucide-react';
+import { AlertTriangle, Info, ArrowLeft } from 'lucide-react';
 
 export function CitizenNotificationsPage() {
   const navigate = useNavigate();
