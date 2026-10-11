@@ -8,6 +8,8 @@ import AIRecommendation from '../components/dashboard/AIRecommendation';
 import RecommendedAllocationSummary from '../components/dashboard/RecommendedAllocationSummary';
 import ResponsePlanSummaryCard from '../components/dashboard/ResponsePlanSummaryCard';
 import ResponseMonitoringSummaryCard from '../components/dashboard/ResponseMonitoringSummaryCard';
+import SafetyUpdatesSummaryCard from '../components/dashboard/SafetyUpdatesSummaryCard';
+import IncidentAnalyticsSummaryCard from '../components/dashboard/IncidentAnalyticsSummaryCard';
 import { useDisaster } from '../context/DisasterContext';
 
 export function CommandCenterPage({ onOpenAlerts }) {
@@ -39,6 +41,9 @@ export function CommandCenterPage({ onOpenAlerts }) {
 
       {/* 2. Overview: 4 primary metrics */}
       <KPIBar />
+
+      {/* 3. Decision Support: Incident Analytics Summary (Step 12) */}
+      <IncidentAnalyticsSummaryCard />
 
       {/* 3. Operational Grid: Priority Areas + Map + What Needs Attention */}
       <section 
@@ -77,7 +82,10 @@ export function CommandCenterPage({ onOpenAlerts }) {
       {/* 6. Response Monitoring & Simulation (Step 10) */}
       <ResponseMonitoringSummaryCard />
 
-      {/* 7. Recommended Next Step */}
+      {/* 7. Safety Updates (Step 11) */}
+      <SafetyUpdatesSummaryCard />
+
+      {/* 8. Recommended Next Step */}
       <AIRecommendation />
     </div>
   );

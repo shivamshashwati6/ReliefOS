@@ -6,7 +6,6 @@ import {
   MapPin, 
   Boxes, 
   ClipboardList, 
-  Sliders, 
   AlertOctagon, 
   Activity, 
   Settings, 
@@ -16,7 +15,9 @@ import {
   Shield,
   HeartPulse,
   Package,
-  LogOut
+  LogOut,
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useDisaster } from '../../context/DisasterContext';
@@ -55,6 +56,7 @@ export function Sidebar({ isOpen = true, onClose }) {
     if (role === ROLES.CITIZEN) {
       return [
         { id: 'citizen-dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/citizen/dashboard' },
+        { id: 'citizen-safety-updates', label: 'Safety Updates', icon: Bell, path: '/safety-updates' },
         { id: 'citizen-emergency', label: 'Report Emergency', icon: AlertOctagon, path: '/report-emergency', highlight: true },
         { id: 'citizen-my-reports', label: 'My Reports', icon: FileText, path: '/reports/my' },
         { id: 'citizen-help', label: 'Nearby Help', icon: LifeBuoy, path: '/citizen/help' },
@@ -71,6 +73,7 @@ export function Sidebar({ isOpen = true, onClose }) {
       return [
         { id: 'department-dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/department/dashboard' },
         { id: 'department-my-dept', label: 'My Department', icon: deptIcon, path: '/department/overview' },
+        { id: 'department-safety-updates', label: 'Safety Updates', icon: Bell, path: '/safety-updates' },
         { id: 'department-reports', label: 'Reports', icon: FileText, path: '/reports', badge: disasterReports.length },
         { id: 'department-resources', label: 'Resources', icon: Boxes, path: '/resources' },
         { id: 'department-zones', label: 'Priority Zones', icon: MapPin, path: '/zones' },
@@ -80,6 +83,9 @@ export function Sidebar({ isOpen = true, onClose }) {
     // Default: COMMAND_CENTER
     return [
       { id: 'command-dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/command/dashboard' },
+      { id: 'command-analytics', label: 'Incident Analytics', icon: BarChart3, path: '/incident-analytics' },
+      { id: 'command-trends', label: 'Incident Trends', icon: TrendingUp, path: '/incident-trends' },
+      { id: 'command-safety-updates', label: 'Safety Updates', icon: Bell, path: '/safety-updates' },
       { id: 'command-reports', label: 'Reports', icon: FileText, path: '/reports', badge: disasterReports.length },
       { id: 'command-zones', label: 'Zones', icon: MapPin, path: '/zones' },
       { id: 'command-allocation', label: 'Resource Allocation', icon: Boxes, path: '/allocation' },

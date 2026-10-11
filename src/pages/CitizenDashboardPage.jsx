@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useReports } from '../context/ReportContext';
 import { useDisaster } from '../context/DisasterContext';
+import { useSafetyUpdate } from '../context/SafetyUpdateContext';
 import StatusBadge from '../components/ui/StatusBadge';
 
 export function CitizenDashboardPage() {
@@ -24,6 +25,7 @@ export function CitizenDashboardPage() {
   const { currentUser } = useAuth();
   const { reports } = useReports();
   const { currentDisaster } = useDisaster();
+  const { publishedDisasterUpdates } = useSafetyUpdate();
 
   // Citizen's personal reports list
   const citizenReports = reports.slice(0, 2);
@@ -33,31 +35,6 @@ export function CitizenDashboardPage() {
     description: 'Water entered our house. Need assistance with food and clean drinking water.',
     status: 'Under review'
   };
-
-  // 2-3 Simple safety updates with clear severity indicators (Section 4C)
-  const safetyUpdates = [
-    {
-      id: 'up-1',
-      title: 'Water level is rising in Sector 4.',
-      detail: 'Water entering ground-level houses near the primary school. Residents should move to higher ground.',
-      severity: 'High',
-      time: '15m ago'
-    },
-    {
-      id: 'up-2',
-      title: 'Route A is currently flooded.',
-      detail: 'The culvert road is submerged. Do not attempt to cross with vehicles. Use Route C bypass instead.',
-      severity: 'Critical',
-      time: '30m ago'
-    },
-    {
-      id: 'up-3',
-      title: 'Route C is open for safe pedestrian bypass.',
-      detail: 'High ground route marked with markers and volunteer stations.',
-      severity: 'Low',
-      time: '45m ago'
-    }
-  ];
 
   const emergencyNumbers = [
     { name: 'National Emergency', number: '112' },
@@ -162,38 +139,79 @@ export function CitizenDashboardPage() {
           </div>
         </section>
 
-        {/* C. Safety Updates */}
-        <section aria-label="Safety Updates" className="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h2 className="font-bold text-base text-slate-900">Safety Updates</h2>
+        {/* C. Safety Updates (Section 11, 13, 14) */}
+        <section aria-label="Safety Updates" className="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <h2 className="font-bold text-base text-slate-900">Safety Updates</h2>
+              </div>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                Prototype Safety Information
+              </span>
             </div>
-            <span className="text-xs text-slate-500 font-medium">
-              Local Notices
-            </span>
+
+            {publishedDisasterUpdates.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-500 space-y-1">
+                <p className="font-semibold text-slate-700">No active safety updates at this time.</p>
+                <p className="text-[11px] text-slate-400">Official advisories will appear here when published by the Command Center.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 mt-4">
+                {publishedDisasterUpdates.slice(0, 3).map((alert) => {
+                  const getSeverityStyle = (sev) => {
+                    if (sev === 'URGENT') return 'bg-rose-50 text-rose-800 border-rose-200';
+                    if (sev === 'CAUTION') return 'bg-amber-50 text-amber-800 border-amber-200';
+                    return 'bg-blue-50 text-blue-800 border-blue-200';
+                  };
+
+                  return (
+                    <div
+                      key={alert.updateId}
+                      className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${getSeverityStyle(alert.severity)}`}>
+                          {alert.severity}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {alert.publishedAt 
+                            ? new Date(alert.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : 'Recent'}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xs font-bold text-slate-900">
+                        {alert.title}
+                      </h3>
+
+                      <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                        {alert.message}
+                      </p>
+
+                      <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/50 flex items-center justify-between">
+                        <span><strong>Area:</strong> {alert.affectedArea}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{alert.updateId}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-3">
-            {safetyUpdates.map((alert) => (
-              <div
-                key={alert.id}
-                className="p-3.5 rounded-lg border border-slate-100 bg-slate-50/60 space-y-1.5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-slate-900">
-                    {alert.title}
-                  </span>
-                  <StatusBadge status={alert.severity} size="xs" />
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {alert.detail}
-                </p>
-                <div className="text-[11px] text-slate-400 pt-0.5">
-                  {alert.time}
-                </div>
-              </div>
-            ))}
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <p className="text-[11px] text-slate-500 italic text-center sm:text-left">
+              Please follow instructions from local authorities and emergency services.
+            </p>
+            <button
+              onClick={() => navigate('/safety-updates')}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium text-blue-600 bg-blue-50/60 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <span>View All Safety Updates</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </section>
 

@@ -22,6 +22,9 @@ import AllocationPage from './pages/AllocationPage';
 import ResponsePlansPage from './pages/ResponsePlansPage';
 import ResponsePlanDetailPage from './pages/ResponsePlanDetailPage';
 import ResponseMonitoringPage from './pages/ResponseMonitoringPage';
+import SafetyUpdatesPage from './pages/SafetyUpdatesPage';
+import IncidentAnalyticsPage from './pages/IncidentAnalyticsPage';
+import IncidentTrendsPage from './pages/IncidentTrendsPage';
 
 import { useAuth } from './context/AuthContext';
 import { ROLES, ROLE_DEFAULT_ROUTES } from './config/roles';
@@ -193,6 +196,22 @@ export function App() {
           }
         />
         <Route
+          path="/incident-analytics"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER]}>
+              <IncidentAnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/incident-trends"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER]}>
+              <IncidentTrendsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/response-plans"
           element={
             <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER, ROLES.DEPARTMENT]}>
@@ -229,6 +248,14 @@ export function App() {
           element={
             <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER]}>
               <AllocationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/safety-updates"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.COMMAND_CENTER, ROLES.DEPARTMENT, ROLES.CITIZEN]}>
+              <SafetyUpdatesPage />
             </ProtectedRoute>
           }
         />
